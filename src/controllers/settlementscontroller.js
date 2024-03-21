@@ -14,6 +14,7 @@ async function createSettlement(req, res) {
       no_of_chargeback,
       exchange_rate,
     } = req.body;
+
     const fromDateWithTime = fromDate + " 00:00:00";
     const toDateWithTime = toDate + " 23:59:59";
 
@@ -39,19 +40,6 @@ async function createSettlement(req, res) {
       ).toFixed(3)
     );
 
-<<<<<<< HEAD
-      const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
-        -2
-      )}/${("0" + (settlementDate.getMonth() + 1)).slice(
-        -2
-      )}/${settlementDate.getFullYear()}`;
-=======
-    const eur_declines = result.filter(
-      (transaction) =>
-        transaction.currency === "EUR" && transaction.Status === "Failed"
-    );
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
-
     let eur_declines_count = eur_declines.length;
     let eur_declines_amount = parseFloat(
       (
@@ -70,22 +58,6 @@ async function createSettlement(req, res) {
     let usd_sales_amount = parseFloat(
       usd_sales.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
     );
-
-<<<<<<< HEAD
-      await Client.updateOne(
-        {company_name:company_name},
-        { last_settled_date: formattedSettlementDate }
-      );
-
-      res
-        .status(201)
-        .json({ success: true, settlement_record: settlement_record });
-    } else {
-      res.status(422).json({
-        errors: ["Client not found for company_name: " + company_name],
-      });
-    }
-=======
     const usd_declines = result.filter(
       (transaction) =>
         transaction.currency === "USD" && transaction.Status === "Failed"
@@ -175,7 +147,10 @@ async function createSettlement(req, res) {
       success: true,
       settlement_record,
     });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
+    await Client.updateOne(
+      { company_name: company_name },
+      { last_settled_date: formattedSettlementDate }
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -200,48 +175,26 @@ async function getSettlement(req, res) {
   }
 }
 
-<<<<<<< HEAD
-async function updateSettlement(req,res) {
-  try {
-    const { id, status } = req.body
-=======
 async function updateSettlement(req, res) {
   try {
     const { id, status } = req.body;
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
 
     const existingSettlement = await Settlementtable.findById(id);
     if (!existingSettlement) {
       return res.status(404).json({ error: "Settlement not found" });
     }
-
-<<<<<<< HEAD
-    if( status ) {
-=======
     if (status) {
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
       existingSettlement.status = status;
     }
 
     const updatedSettlement = await existingSettlement.save();
 
-<<<<<<< HEAD
-    res.status(200).json ({
-=======
     res.status(200).json({
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
       message: "Settlement Updated successfully",
       settlement_record: updatedSettlement,
     });
   } catch (error) {
     console.error(error);
-<<<<<<< HEAD
-    res.status(500).json({ error: "Internal server error"});
-  }
-}
-
-module.exports = { createSettlement, getSettlement, updateSettlement };
-=======
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -263,4 +216,3 @@ module.exports = {
   updateSettlement,
   getSettlementRecordforPDF,
 };
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6

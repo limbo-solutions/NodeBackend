@@ -4,7 +4,6 @@ const settlementtableSchema = new mongoose.Schema({
   company_name: { type: String, required: true },
   fromDate: { type: String },
   toDate: { type: String },
-
   eur_sales_count: { type: Number },
   eur_declines_count: { type: Number },
   usd_sales_count: { type: Number },
