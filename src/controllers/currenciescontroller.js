@@ -9,7 +9,7 @@ async function createCurrency(req, res) {
       const currency = new Currency({
         currency_name,
         currency_code,
-        status: Status || 'Active', 
+        Status: Status || 'Active', 
       });
   
       await currency.save();
@@ -99,7 +99,7 @@ async function deleteCurrency(req, res) {
         existingCurrency.currency_code = currency_code;
       }
       if (Status) {
-        existingCurrency.status = Status;
+        existingCurrency.Status = Status;
       }
       const updatedCurrency = await existingCurrency.save();
       

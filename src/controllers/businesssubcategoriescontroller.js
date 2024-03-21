@@ -9,14 +9,18 @@ async function createBusinesssubcategory(req, res) {
         const businessubcategory = new Businessubcategory({
             subcategory_name,
             category_name,
-            status: Status || 'Active',
+            Status: Status || 'Active',
         });
 
         await businessubcategory.save();
 
         res.status(201).json({ message: "Business subcategory created successfully", businessubcategory });
     } catch (error) {
-        console.error(error);
+        if (error.errors && error.errors.category_name) {
+            // If category_name validation fails
+            return res.status(400).json({ error: error.errors.category_name.message });
+          }
+        // console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 }
@@ -49,7 +53,7 @@ async function searchBusinesssubcategory(req, res) {
             };
         }
         if (Status !== undefined) {
-            searchCriteria.status = { $regex: new RegExp(`^${Status}$`, 'i'), };
+            searchCriteria.Status = { $regex: new RegExp(`^${Status}$`, 'i'), };
         }
 
         const foundBusinessubcategories = await Businessubcategory.find(searchCriteria);
@@ -103,7 +107,7 @@ async function updateBusinesssubcategory(req, res) {
         }
         
         if (Status) {
-            existingBusinessubcategory.status = Status;
+            existingBusinessubcategory.Status = Status;
         }
         const updatedBusinessubcategory = await existingBusinessubcategory.save();
 

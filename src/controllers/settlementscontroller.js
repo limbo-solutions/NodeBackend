@@ -70,7 +70,6 @@ async function createSettlement(req, res) {
 
       const settlementDate = new Date();
 
-      // Format the settlement date as dd/mm/yyyy
       const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
         -2
       )}/${("0" + (settlementDate.getMonth() + 1)).slice(
@@ -87,6 +86,11 @@ async function createSettlement(req, res) {
       });
 
       await settlement_record.save();
+
+      await Client.updateOne(
+        {company_name:company_name},
+        { last_settled_date: formattedSettlementDate }
+      );
 
       res
         .status(201)
@@ -120,4 +124,29 @@ async function getSettlement(req, res) {
   }
 }
 
-module.exports = { createSettlement, getSettlement };
+async function updateSettlement(req,res) {
+  try {
+    const { id, status } = req.body
+
+    const existingSettlement = await Settlementtable.findById(id);
+    if (!existingSettlement) {
+      return res.status(404).json({ error: "Settlement not found" });
+    }
+
+    if( status ) {
+      existingSettlement.status = status;
+    }
+
+    const updatedSettlement = await existingSettlement.save();
+
+    res.status(200).json ({
+      message: "Settlement Updated successfully",
+      settlement_record: updatedSettlement,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error"});
+  }
+}
+
+module.exports = { createSettlement, getSettlement, updateSettlement };

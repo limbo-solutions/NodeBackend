@@ -73,10 +73,33 @@ async function createTransactiontable(req, res) {
   }
 }
 
+// async function getTransactiontable(req, res) {
+//   try {
+//     const transactiontable = await Transactiontable.find();
+//     res.status(200).json(transactiontable);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// }
+
 async function getTransactiontable(req, res) {
   try {
-    const transactiontable = await Transactiontable.find();
-    res.status(200).json(transactiontable);
+    const { page = 1, pageSize = 10 } = req.query;
+    
+    let skip = (page - 1) * pageSize;
+    if (skip < 0) {
+      skip = 0;
+    }
+    
+    const transactiontable = await Transactiontable.find().skip(skip).limit(pageSize);
+    
+    res.status(200).json({
+      currentPage: parseInt(page),
+      pageSize: parseInt(pageSize),
+      totalItems: transactiontable.length, 
+      transactiontable
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

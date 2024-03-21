@@ -8,7 +8,7 @@ async function createDocumenttype(req, res) {
 
         const documentType = new DocumentType({
             document_type,
-            status: Status || 'Active',
+            Status: Status || 'Active',
         });
 
         await documentType.save();
@@ -71,6 +71,7 @@ async function deleteDocumenttype(req, res) {
         if (!existingDocumentType) {
             return res.status(404).json({ error: "Document type not found" });
         }
+        await DocumentType.findOneAndDelete({ document_type });
 
         res.status(200).json({ message: "Document type deleted successfully" });
     } catch (error) {
@@ -92,7 +93,7 @@ async function updateDocumenttype(req, res) {
             existingDocumentType.document_type = document_type;
         }
         if (Status) {
-            existingDocumentType.status = Status;
+            existingDocumentType.Status = Status;
         }
         const updatedDocumentType = await existingDocumentType.save();
 

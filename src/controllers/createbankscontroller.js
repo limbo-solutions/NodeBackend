@@ -10,7 +10,7 @@ async function createBank(req, res) {
             bank_name,
             div_id,
             bank_url,
-            status: Status || 'Active',
+            Status: Status || 'Active',
         });
 
         await bank.save();
@@ -49,7 +49,7 @@ async function searchBank(req, res) {
             searchCriteria.bank_url = { $regex: new RegExp(`^${bank_url}$`, 'i'), };
         }
         if (Status !== undefined) {
-            searchCriteria.status = { $regex: new RegExp(`^${Status}$`, 'i'), };
+            searchCriteria.Status = { $regex: new RegExp(`^${Status}$`, 'i'), };
         }
 
         const foundBanks = await Bank.find(searchCriteria);
