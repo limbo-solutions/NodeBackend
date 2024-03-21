@@ -5,25 +5,25 @@ async function createRatetable(req, res) {
   try {
     const {
       company_name,
-      settlement_scheme,
       MDR,
       txn_app,
       txn_dec,
-      txn_total,
       RR,
       settlement_fee,
+      refund_fee,
+      chargeback_fee,
     } = req.body;
 
     // Create a new Transactiontable
     const ratetable = new Ratetable({
       company_name,
-      settlement_scheme,
       MDR,
       txn_app,
       txn_dec,
-      txn_total,
       RR,
       settlement_fee,
+      refund_fee,
+      chargeback_fee,
     });
 
     // Save the Transactiontable to the database

@@ -6,87 +6,72 @@ const Client = require("../models/Client");
 
 async function createSettlement(req, res) {
   try {
-    const { fromDate, toDate, company_name } = req.body;
-    console.log(fromDate);
-    console.log(toDate);
+    const {
+      fromDate,
+      toDate,
+      company_name,
+      no_of_refund,
+      no_of_chargeback,
+      exchange_rate,
+    } = req.body;
     const fromDateWithTime = fromDate + " 00:00:00";
     const toDateWithTime = toDate + " 23:59:59";
 
+    //All transactions of Delasport between from and to date
     const result = await Transactiontable.find({
       merchant: company_name,
       transactiondate: { $gte: fromDateWithTime, $lte: toDateWithTime },
     });
-    const entity = await Client.findOne({ company_name: company_name });
 
-    const success_result = await Transactiontable.find({
-      merchant: company_name,
-      transactiondate: { $gte: fromDateWithTime, $lte: toDateWithTime },
-      Status: "Success",
-    });
-    const total_volume = success_result.reduce(
-      (total, txn) => total + txn.amount,
-      0
-    );
-    console.log(total_volume);
-
+    //Rates of Delasport
     const rates = await Ratetable.findOne({ company_name: company_name });
 
-    if (entity) {
-      let settlement_amount;
-      if (rates.settlement_scheme === "Total") {
-        const no_of_txn = result.length;
-        console.log(no_of_txn);
-        let val =
-          total_volume -
-          total_volume * (rates.MDR / 100) -
-          no_of_txn * rates.txn_total -
-          total_volume * (rates.RR / 100);
-        console.log(val);
-        let s_val = val * (rates.settlement_fee / 100);
-        console.log(s_val);
-        settlement_amount = val - s_val;
-        console.log(settlement_amount);
-      } else {
-        const failure_result = await Transactiontable.find({
-          merchant: company_name,
-          transactiondate: { $gte: fromDateWithTime, $lte: toDateWithTime },
-          Status: "Failed",
-        });
-        const success_txn = success_result.length;
-        const failure_txn = failure_result.length;
-        console.log(success_txn);
-        console.log(failure_txn);
-        let val =
-          total_volume -
-          total_volume * (rates.MDR / 100) -
-          (success_txn * rates.txn_app + failure_txn * rates.txn_dec) -
-          total_volume * (rates.RR / 100);
-        console.log(val);
-        let s_val = val * (rates.settlement_fee / 100);
-        console.log(s_val);
-        settlement_amount = val - s_val;
-        console.log(settlement_amount);
-      }
+    // Transactions done in EUR
+    const eur_sales = result.filter(
+      (transaction) =>
+        transaction.currency === "EUR" && transaction.Status === "Success"
+    );
 
-      const settlementDate = new Date();
+    let eur_sales_count = eur_sales.length;
+    let eur_sales_amount = parseFloat(
+      (
+        eur_sales.reduce((total, txn) => total + txn.amount, 0) * exchange_rate
+      ).toFixed(3)
+    );
 
+<<<<<<< HEAD
       const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
         -2
       )}/${("0" + (settlementDate.getMonth() + 1)).slice(
         -2
       )}/${settlementDate.getFullYear()}`;
+=======
+    const eur_declines = result.filter(
+      (transaction) =>
+        transaction.currency === "EUR" && transaction.Status === "Failed"
+    );
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
 
-      // Create a new instance of SettlementRecord with date_settled assigned
+    let eur_declines_count = eur_declines.length;
+    let eur_declines_amount = parseFloat(
+      (
+        eur_declines.reduce((total, txn) => total + txn.amount, 0) *
+        exchange_rate
+      ).toFixed(3)
+    );
 
-      const settlement_record = new Settlementtable({
-        company_name: company_name,
-        date_settled: formattedSettlementDate,
-        total_volume: total_volume,
-        settlement_volume: settlement_amount,
-      });
+    // Transactions done in USD
+    const usd_sales = result.filter(
+      (transaction) =>
+        transaction.currency === "USD" && transaction.Status === "Success"
+    );
 
-      await settlement_record.save();
+    let usd_sales_count = usd_sales.length;
+    let usd_sales_amount = parseFloat(
+      usd_sales.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
 
+<<<<<<< HEAD
       await Client.updateOne(
         {company_name:company_name},
         { last_settled_date: formattedSettlementDate }
@@ -100,6 +85,97 @@ async function createSettlement(req, res) {
         errors: ["Client not found for company_name: " + company_name],
       });
     }
+=======
+    const usd_declines = result.filter(
+      (transaction) =>
+        transaction.currency === "USD" && transaction.Status === "Failed"
+    );
+
+    let usd_declines_count = usd_declines.length;
+    let usd_declines_amount = parseFloat(
+      usd_declines.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
+
+    let total_sales_count = eur_sales_count + usd_sales_count;
+    let total_declines_count = eur_declines_count + usd_declines_count;
+    let total_sales_amount = parseFloat(
+      (eur_sales_amount + usd_sales_amount).toFixed(3)
+    );
+    let total_declines_amount = parseFloat(
+      (eur_declines_amount + usd_declines_amount).toFixed(3)
+    );
+
+    const total_volume = total_sales_amount + total_declines_amount;
+    console.log("Total volume", total_volume);
+    let MDR = rates.MDR;
+    let txn_app = rates.txn_app;
+    let txn_dec = rates.txn_dec;
+    let RR = rates.RR;
+    let refund_fee = rates.refund_fee;
+    let chargeback_fee = rates.chargeback_fee;
+    let settlement_fee = rates.settlement_fee;
+    let MDR_amount = parseFloat((total_volume * (MDR / 100)).toFixed(3));
+    let app_amount = parseFloat((total_sales_count * txn_app).toFixed(3));
+    let dec_amount = parseFloat((total_declines_count * txn_dec).toFixed(3));
+    let RR_amount = parseFloat((total_volume * (RR / 100)).toFixed(3));
+    let val = parseFloat(
+      (
+        total_volume -
+        MDR_amount -
+        (app_amount + dec_amount) -
+        RR_amount
+      ).toFixed(3)
+    );
+    console.log(val);
+    let s_val = parseFloat((val * (settlement_fee / 100)).toFixed(3));
+    total_fee = MDR_amount + app_amount + dec_amount + RR_amount + s_val;
+    settlement_amount = parseFloat((val - s_val).toFixed(3));
+    console.log(settlement_amount);
+
+    let refund_amount = no_of_refund * refund_fee;
+    let chargeback_amount = no_of_chargeback * chargeback_fee;
+    const settlementDate = new Date();
+
+    // Format the settlement date as dd/mm/yyyy
+    const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+      -2
+    )}/${("0" + (settlementDate.getMonth() + 1)).slice(
+      -2
+    )}/${settlementDate.getFullYear()}`;
+
+    // Create a new instance of SettlementRecord with date_settled assigned
+
+    const settlement_record = new Settlementtable({
+      company_name,
+      fromDate,
+      toDate,
+      eur_sales_count,
+      eur_declines_count,
+      usd_sales_count,
+      usd_declines_count,
+      total_sales_count,
+      total_declines_count,
+      total_sales_amount,
+      total_declines_amount,
+      MDR_amount,
+      app_amount,
+      dec_amount,
+      RR_amount,
+      s_val,
+      total_fee,
+      date_settled: formattedSettlementDate,
+      settlement_volume: settlement_amount,
+      refund_amount,
+      chargeback_amount,
+    });
+
+    await settlement_record.save();
+
+    res.status(201).json({
+      success: true,
+      settlement_record,
+    });
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -124,29 +200,67 @@ async function getSettlement(req, res) {
   }
 }
 
+<<<<<<< HEAD
 async function updateSettlement(req,res) {
   try {
     const { id, status } = req.body
+=======
+async function updateSettlement(req, res) {
+  try {
+    const { id, status } = req.body;
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
 
     const existingSettlement = await Settlementtable.findById(id);
     if (!existingSettlement) {
       return res.status(404).json({ error: "Settlement not found" });
     }
 
+<<<<<<< HEAD
     if( status ) {
+=======
+    if (status) {
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
       existingSettlement.status = status;
     }
 
     const updatedSettlement = await existingSettlement.save();
 
+<<<<<<< HEAD
     res.status(200).json ({
+=======
+    res.status(200).json({
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
       message: "Settlement Updated successfully",
       settlement_record: updatedSettlement,
     });
   } catch (error) {
     console.error(error);
+<<<<<<< HEAD
     res.status(500).json({ error: "Internal server error"});
   }
 }
 
 module.exports = { createSettlement, getSettlement, updateSettlement };
+=======
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+async function getSettlementRecordforPDF(req, res) {
+  try {
+    const id = req.query.id;
+    const record = await Settlementtable.findById(id);
+    res.json(record);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+module.exports = {
+  createSettlement,
+  getSettlement,
+  updateSettlement,
+  getSettlementRecordforPDF,
+};
+>>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6

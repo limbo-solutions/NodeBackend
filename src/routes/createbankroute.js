@@ -4,7 +4,7 @@ const {
   getBank,
   searchBank,
   deleteBank,
-  updateBank,    
+  updateBank,
 } = require("../controllers/createbankscontroller");
 
 const router = express.Router();

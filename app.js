@@ -16,6 +16,7 @@ const DocumenttypeRoutes = require("./src/routes/documenttyperoute");
 const CreatebankRoutes = require("./src/routes/createbankroute");
 const BusinesssubcategoryRoutes = require("./src/routes/businesssubcategoryroute");
 const DocumentcategoryRoutes = require("./src/routes/documentcategoryroute");
+const TransactionreportRoutes = require("./src/routes/transactionreportroute");
 
 require("./src/config/database");
 
@@ -24,9 +25,6 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(cors());
-// app.use("", (req, res) => {
-//   res.send("Welcome to Centpays");
-// });
 app.use("/", ClientRoutes);
 app.use("/", UserRoutes);
 app.use("/", SessionRoutes);
@@ -41,6 +39,7 @@ app.use("/", DocumenttypeRoutes);
 app.use("/", CreatebankRoutes);
 app.use("/", BusinesssubcategoryRoutes);
 app.use("/", DocumentcategoryRoutes);
+app.use("/", TransactionreportRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
