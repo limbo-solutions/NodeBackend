@@ -102,4 +102,25 @@ async function searchTransactionReport(req, res) {
   }
 }
 
-module.exports = { searchTransactionReport };
+async function quickSearch(req, res) {
+  const { id } = req.query;
+
+  if (!id) {
+    return res.status(400).json({ error: "Search value is required" });
+  }
+
+  try {
+    const transaction = await Transactiontable.findById(id);
+
+    if (!transaction) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    return res.json(transaction);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+module.exports = { searchTransactionReport, quickSearch };
