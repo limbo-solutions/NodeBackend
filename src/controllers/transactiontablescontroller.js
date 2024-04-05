@@ -247,6 +247,68 @@ async function successfulTransactionsForLast7Days(req, res) {
   }
 }
 
+async function transactionCountsForLastNDays(req, res) {
+  try {
+    const { days } = req.query;
+
+    if (!days || isNaN(days) || days <= 0) {
+      return res
+        .status(400)
+        .json({
+          error: "Invalid value for 'n'. Please provide a positive integer.",
+        });
+    }
+
+    const currentDate = new Date();
+    const results = [];
+
+    for (let i = 1; i <= days; i++) {
+      const date = new Date(currentDate);
+      date.setDate(date.getDate() - i);
+
+      const fromDate = `${("0" + date.getDate()).slice(-2)}/${(
+        "0" +
+        (date.getMonth() + 1)
+      ).slice(-2)}/${date.getFullYear()} 00:00:00`;
+      const toDate = `${("0" + date.getDate()).slice(-2)}/${(
+        "0" +
+        (date.getMonth() + 1)
+      ).slice(-2)}/${date.getFullYear()} 23:59:59`;
+
+      const successCount = await Transactiontable.countDocuments({
+        transactiondate: {
+          $gte: fromDate,
+          $lte: toDate,
+        },
+        Status: "Success",
+      });
+
+      const failedCount = await Transactiontable.countDocuments({
+        transactiondate: {
+          $gte: fromDate,
+          $lte: toDate,
+        },
+        Status: "Failed",
+      });
+
+      const pendingCount = await Transactiontable.countDocuments({
+        transactiondate: {
+          $gte: fromDate,
+          $lte: toDate,
+        },
+        Status: "Pending",
+      });
+
+      results.push({ date: fromDate, successCount, failedCount, pendingCount });
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error in fetching transactions for last n days:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createTransactiontable,
   getTransactiontable,
@@ -254,4 +316,5 @@ module.exports = {
   successfulTransactions,
   statistics,
   successfulTransactionsForLast7Days,
+  transactionCountsForLastNDays,
 };

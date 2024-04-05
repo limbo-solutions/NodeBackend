@@ -6,6 +6,7 @@ const {
   successfulTransactions,
   statistics,
   successfulTransactionsForLast7Days,
+  transactionCountsForLastNDays,
 } = require("../controllers/transactiontablescontroller");
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get(
   "/transactiontables/lastsevendays",
   successfulTransactionsForLast7Days
 );
+router.get("/transactiontables/linechart", transactionCountsForLastNDays);
 
 module.exports = router;
