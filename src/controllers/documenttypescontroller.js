@@ -6,17 +6,10 @@ async function createDocumenttype(req, res) {
   try {
     const { document_type, Status } = req.body;
 
-<<<<<<< HEAD
-        const documentType = new DocumentType({
-            document_type,
-            Status: Status || 'Active',
-        });
-=======
-    const documentType = new Documenttype({
+    const documentType = new DocumentType({
       document_type,
-      status: Status || "Active",
+      Status: Status || "Active",
     });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
 
     await documentType.save();
 
@@ -78,24 +71,11 @@ async function deleteDocumenttype(req, res) {
   try {
     const { document_type } = req.body;
 
-<<<<<<< HEAD
-        const existingDocumentType = await DocumentType.findOne({ document_type });
-        if (!existingDocumentType) {
-            return res.status(404).json({ error: "Document type not found" });
-        }
-        await DocumentType.findOneAndDelete({ document_type });
-
-        res.status(200).json({ message: "Document type deleted successfully" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
-=======
-    const existingDocumentType = await Documenttype.findOne({ document_type });
+    const existingDocumentType = await DocumentType.findOne({ document_type });
     if (!existingDocumentType) {
       return res.status(404).json({ error: "Document type not found" });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
     }
-    await Documenttype.findOneAndDelete({ document_type });
+    await DocumentType.findOneAndDelete({ document_type });
 
     res.status(200).json({ message: "Document type deleted successfully" });
   } catch (error) {
@@ -108,32 +88,9 @@ async function updateDocumenttype(req, res) {
   try {
     const { id, document_type, Status } = req.body;
 
-<<<<<<< HEAD
-        const existingDocumentType = await DocumentType.findById(id);
-        if (!existingDocumentType) {
-            return res.status(404).json({ error: "Document type not found" });
-        }
-
-        if (document_type) {
-            existingDocumentType.document_type = document_type;
-        }
-        if (Status) {
-            existingDocumentType.Status = Status;
-        }
-        const updatedDocumentType = await existingDocumentType.save();
-
-        res.status(200).json({
-            message: "Document type updated successfully",
-            documentType: updatedDocumentType,
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
-=======
     const existingDocumentType = await Documenttype.findById(id);
     if (!existingDocumentType) {
       return res.status(404).json({ error: "Document type not found" });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
     }
 
     if (document_type) {

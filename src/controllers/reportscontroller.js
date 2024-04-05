@@ -87,7 +87,7 @@ async function searchTransactionReport(req, res) {
       };
     }
 
-    const foundRecords = await Transactiontable.find(searchCriteria);
+    foundRecords = await Transactiontable.find(searchCriteria);
 
     if (foundRecords.length > 0) {
       return res.status(200).json({

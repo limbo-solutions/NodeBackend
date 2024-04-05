@@ -10,102 +10,225 @@ async function createSettlement(req, res) {
       fromDate,
       toDate,
       company_name,
-      no_of_refund,
-      no_of_chargeback,
-      exchange_rate,
+      eur_no_of_refund,
+      usd_no_of_refund,
+      eur_refund_amount,
+      usd_refund_amount,
+      eur_no_of_chargeback,
+      usd_no_of_chargeback,
+      eur_chargeback_amount,
+      usd_chargeback_amount,
+      eur_to_usd_exc_rate,
+      usd_to_eur_exc_rate,
     } = req.body;
+    console.log("from", fromDate);
+    console.log("to", toDate);
+    var [year, month, day] = fromDate.substring(0, 10).split("-");
+    const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
 
-    const fromDateWithTime = fromDate + " 00:00:00";
-    const toDateWithTime = toDate + " 23:59:59";
+    [year, month, day] = toDate.substring(0, 10).split("-");
+    const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
 
-    //All transactions of Delasport between from and to date
-    const result = await Transactiontable.find({
+    //All transactions of Company between from and to date
+    const all_txn_of_company = await Transactiontable.find({
       merchant: company_name,
-      transactiondate: { $gte: fromDateWithTime, $lte: toDateWithTime },
+      transactiondate: {
+        $gte: formattedfromDate,
+        $lte: formattedtoDate,
+      },
     });
 
-    //Rates of Delasport
+    //Extract rates of the company
     const rates = await Ratetable.findOne({ company_name: company_name });
+    MDR = rates.MDR;
+    RR = rates.RR;
+    settlement_fee = rates.settlement_fee;
 
-    // Transactions done in EUR
-    const eur_sales = result.filter(
-      (transaction) =>
-        transaction.currency === "EUR" && transaction.Status === "Success"
+    if (rates.currency === "EUR") {
+      //Rates for EURO (as it is)
+      eur_txn_app = rates.txn_app;
+      eur_txn_dec = rates.txn_dec;
+      eur_refund_fee = rates.refund_fee;
+      eur_chargeback_fee = rates.chargeback_fee;
+
+      //Rates for USD (convert EUR to USD)
+
+      usd_txn_app = rates.txn_app * eur_to_usd_exc_rate;
+      usd_txn_dec = rates.txn_dec * eur_to_usd_exc_rate;
+
+      usd_refund_fee = rates.refund_fee * eur_to_usd_exc_rate;
+      usd_chargeback_fee = rates.chargeback_fee * eur_to_usd_exc_rate;
+    } else {
+      //Rates for EURO (convert usd to eur)
+      eur_txn_app = rates.txn_app * usd_to_eur_exc_rate;
+      eur_txn_dec = rates.txn_dec * usd_to_eur_exc_rate;
+      eur_refund_fee = rates.refund_fee * usd_to_eur_exc_rate;
+      eur_chargeback_fee = rates.chargeback_fee * usd_to_eur_exc_rate;
+
+      //Rates for USD (As it is)
+      usd_txn_app = rates.txn_app;
+      usd_txn_dec = rates.txn_dec;
+      usd_refund_fee = rates.refund_fee;
+      usd_chargeback_fee = rates.chargeback_fee;
+    }
+
+    //EUR calculations
+
+    //Euro transactions of Company
+    const all_eur_txn = all_txn_of_company.filter(
+      (transaction) => transaction.currency === "EUR"
     );
 
-    let eur_sales_count = eur_sales.length;
-    let eur_sales_amount = parseFloat(
+    //Approved and Declined EUR txns
+    const { eur_app_txn, eur_dec_txn } = all_eur_txn.reduce(
+      (all_txn_of_company, transaction) => {
+        if (transaction.Status === "Success") {
+          all_txn_of_company.eur_app_txn.push(transaction);
+        } else if (transaction.Status === "Failed") {
+          all_txn_of_company.eur_dec_txn.push(transaction);
+        }
+        return all_txn_of_company;
+      },
+      { eur_app_txn: [], eur_dec_txn: [] }
+    );
+
+    //EUR Approved count
+    const eur_app_count = eur_app_txn.length;
+    //EUR Approved Volume
+    let eur_app_vol = parseFloat(
+      eur_app_txn.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
+
+    //EUR Declined count
+    const eur_dec_count = eur_dec_txn.length;
+    //EUR Declined Volume
+    let eur_dec_vol = parseFloat(
+      eur_dec_txn.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
+
+    //EUR total volumes
+    const eur_total_vol = parseFloat((eur_app_vol + eur_dec_vol).toFixed(3));
+
+    //Fess calculation
+    let eur_MDR_amount = parseFloat((eur_total_vol * (MDR / 100)).toFixed(3));
+    let eur_app_amount = parseFloat((eur_app_count * eur_txn_app).toFixed(3));
+    let eur_dec_amount = parseFloat((eur_dec_count * eur_txn_dec).toFixed(3));
+    let eur_RR_amount = parseFloat((eur_total_vol * (RR / 100)).toFixed(3));
+
+    let eur_amt_after_fees = parseFloat(
       (
-        eur_sales.reduce((total, txn) => total + txn.amount, 0) * exchange_rate
+        eur_total_vol -
+        eur_MDR_amount -
+        eur_app_amount -
+        eur_dec_amount -
+        eur_RR_amount
       ).toFixed(3)
     );
 
-    let eur_declines_count = eur_declines.length;
-    let eur_declines_amount = parseFloat(
+    let eur_settlement_fee_amount = parseFloat(
+      (eur_amt_after_fees * (settlement_fee / 100)).toFixed(3)
+    );
+
+    let eur_settlement_amount = parseFloat(
+      (eur_amt_after_fees - eur_settlement_fee_amount).toFixed(3)
+    );
+
+    let eur_total_refund_amount =
+      parseFloat(eur_no_of_refund) * eur_refund_fee +
+      parseFloat(eur_refund_amount);
+    let eur_total_chargeback_amount =
+      parseFloat(eur_no_of_chargeback) * eur_chargeback_fee +
+      parseFloat(eur_chargeback_amount);
+
+    const eur_settlement_vol =
+      eur_settlement_amount -
+      eur_total_refund_amount -
+      eur_total_chargeback_amount;
+
+    const eur_to_usd_settlement_vol = parseFloat(
+      (eur_settlement_vol * eur_to_usd_exc_rate).toFixed(3)
+    );
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //USD calculations
+
+    //USD transactions of Company
+    const all_usd_txn = all_txn_of_company.filter(
+      (transaction) => transaction.currency === "USD"
+    );
+
+    //Approved and Declined USD txns
+    const { usd_app_txn, usd_dec_txn } = all_usd_txn.reduce(
+      (all_txn_of_company, transaction) => {
+        if (transaction.Status === "Success") {
+          all_txn_of_company.usd_app_txn.push(transaction);
+        } else if (transaction.Status === "Failed") {
+          all_txn_of_company.usd_dec_txn.push(transaction);
+        }
+        return all_txn_of_company;
+      },
+      { usd_app_txn: [], usd_dec_txn: [] }
+    );
+
+    //USD Approved count
+    const usd_app_count = usd_app_txn.length;
+
+    //USD Approved Volume
+    let usd_app_vol = parseFloat(
+      usd_app_txn.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
+
+    //USD Declined count
+    const usd_dec_count = usd_dec_txn.length;
+    //USD Declined Volume
+    let usd_dec_vol = parseFloat(
+      usd_dec_txn.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    );
+
+    //USD total volumes
+    const usd_total_vol = parseFloat((usd_app_vol + usd_dec_vol).toFixed(3));
+
+    //Fess calculation
+    let usd_MDR_amount = parseFloat((usd_total_vol * (MDR / 100)).toFixed(3));
+    let usd_app_amount = parseFloat((usd_app_count * usd_txn_app).toFixed(3));
+    let usd_dec_amount = parseFloat((usd_dec_count * usd_txn_dec).toFixed(3));
+    let usd_RR_amount = parseFloat((usd_total_vol * (RR / 100)).toFixed(3));
+
+    let usd_amt_after_fees = parseFloat(
       (
-        eur_declines.reduce((total, txn) => total + txn.amount, 0) *
-        exchange_rate
+        usd_total_vol -
+        usd_MDR_amount -
+        usd_app_amount -
+        usd_dec_amount -
+        usd_RR_amount
       ).toFixed(3)
     );
 
-    // Transactions done in USD
-    const usd_sales = result.filter(
-      (transaction) =>
-        transaction.currency === "USD" && transaction.Status === "Success"
+    let usd_settlement_fee_amount = parseFloat(
+      (usd_amt_after_fees * (settlement_fee / 100)).toFixed(3)
     );
 
-    let usd_sales_count = usd_sales.length;
-    let usd_sales_amount = parseFloat(
-      usd_sales.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
-    );
-    const usd_declines = result.filter(
-      (transaction) =>
-        transaction.currency === "USD" && transaction.Status === "Failed"
+    let usd_settlement_amount = parseFloat(
+      (usd_amt_after_fees - usd_settlement_fee_amount).toFixed(3)
     );
 
-    let usd_declines_count = usd_declines.length;
-    let usd_declines_amount = parseFloat(
-      usd_declines.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
+    let usd_total_refund_amount =
+      parseFloat(usd_no_of_refund) * usd_refund_fee +
+      parseFloat(usd_refund_amount);
+    let usd_total_chargeback_amount =
+      parseFloat(usd_no_of_chargeback) * usd_chargeback_fee +
+      parseFloat(usd_chargeback_amount);
+
+    const usd_settlement_vol =
+      usd_settlement_amount -
+      usd_total_refund_amount -
+      usd_total_chargeback_amount;
+
+    const total_settlement_volume = parseFloat(
+      (eur_to_usd_settlement_vol + usd_settlement_vol).toFixed(3)
     );
 
-    let total_sales_count = eur_sales_count + usd_sales_count;
-    let total_declines_count = eur_declines_count + usd_declines_count;
-    let total_sales_amount = parseFloat(
-      (eur_sales_amount + usd_sales_amount).toFixed(3)
-    );
-    let total_declines_amount = parseFloat(
-      (eur_declines_amount + usd_declines_amount).toFixed(3)
-    );
-
-    const total_volume = total_sales_amount + total_declines_amount;
-    console.log("Total volume", total_volume);
-    let MDR = rates.MDR;
-    let txn_app = rates.txn_app;
-    let txn_dec = rates.txn_dec;
-    let RR = rates.RR;
-    let refund_fee = rates.refund_fee;
-    let chargeback_fee = rates.chargeback_fee;
-    let settlement_fee = rates.settlement_fee;
-    let MDR_amount = parseFloat((total_volume * (MDR / 100)).toFixed(3));
-    let app_amount = parseFloat((total_sales_count * txn_app).toFixed(3));
-    let dec_amount = parseFloat((total_declines_count * txn_dec).toFixed(3));
-    let RR_amount = parseFloat((total_volume * (RR / 100)).toFixed(3));
-    let val = parseFloat(
-      (
-        total_volume -
-        MDR_amount -
-        (app_amount + dec_amount) -
-        RR_amount
-      ).toFixed(3)
-    );
-    console.log(val);
-    let s_val = parseFloat((val * (settlement_fee / 100)).toFixed(3));
-    total_fee = MDR_amount + app_amount + dec_amount + RR_amount + s_val;
-    settlement_amount = parseFloat((val - s_val).toFixed(3));
-    console.log(settlement_amount);
-
-    let refund_amount = no_of_refund * refund_fee;
-    let chargeback_amount = no_of_chargeback * chargeback_fee;
     const settlementDate = new Date();
 
     // Format the settlement date as dd/mm/yyyy
@@ -119,26 +242,44 @@ async function createSettlement(req, res) {
 
     const settlement_record = new Settlementtable({
       company_name,
-      fromDate,
-      toDate,
-      eur_sales_count,
-      eur_declines_count,
-      usd_sales_count,
-      usd_declines_count,
-      total_sales_count,
-      total_declines_count,
-      total_sales_amount,
-      total_declines_amount,
-      MDR_amount,
-      app_amount,
-      dec_amount,
-      RR_amount,
-      s_val,
-      total_fee,
+      fromDate: formattedfromDate.substring(0, 10),
+      toDate: formattedtoDate.substring(0, 10),
+      eur_app_count,
+      eur_dec_count,
+      usd_app_count,
+      usd_dec_count,
+      eur_app_vol,
+      eur_dec_vol,
+      usd_app_vol,
+      usd_dec_vol,
+      eur_MDR_amount,
+      eur_app_amount,
+      eur_dec_amount,
+      eur_RR_amount,
+      usd_MDR_amount,
+      usd_app_amount,
+      usd_dec_amount,
+      usd_RR_amount,
+      eur_settlement_fee_amount,
+      usd_settlement_fee_amount,
+      eur_settlement_amount,
+      usd_settlement_amount,
+      eur_no_of_refund,
+      eur_refund_amount,
+      eur_total_refund_amount,
+      eur_no_of_chargeback,
+      eur_chargeback_amount,
+      eur_total_chargeback_amount,
+      usd_no_of_refund,
+      usd_refund_amount,
+      usd_total_refund_amount,
+      usd_no_of_chargeback,
+      usd_chargeback_amount,
+      usd_total_chargeback_amount,
       date_settled: formattedSettlementDate,
-      settlement_volume: settlement_amount,
-      refund_amount,
-      chargeback_amount,
+      eur_settlement_vol,
+      eur_to_usd_settlement_vol,
+      usd_settlement_vol,
     });
 
     await settlement_record.save();
@@ -203,6 +344,7 @@ async function getSettlementRecordforPDF(req, res) {
   try {
     const id = req.query.id;
     const record = await Settlementtable.findById(id);
+    console.log(record);
     res.json(record);
   } catch (error) {
     console.error(error);

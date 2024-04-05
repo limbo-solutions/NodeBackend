@@ -6,21 +6,12 @@ async function createBank(req, res) {
   try {
     const { bank_name, div_id, bank_url, Status } = req.body;
 
-<<<<<<< HEAD
-        const bank = new Bank({
-            bank_name,
-            div_id,
-            bank_url,
-            Status: Status || 'Active',
-        });
-=======
     const bank = new Createbank({
       bank_name,
       div_id,
       bank_url,
-      status: Status || "Active",
+      Status: Status || "Active",
     });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
 
     await bank.save();
 
@@ -48,37 +39,8 @@ async function searchBank(req, res) {
 
     const searchCriteria = {};
 
-<<<<<<< HEAD
-        if (bank_name !== undefined) {
-            searchCriteria.bank_name = { $regex: new RegExp(`^${bank_name}$`, 'i'), };
-        }
-        if (div_id !== undefined) {
-            searchCriteria.div_id = { $regex: new RegExp(`^${div_id}$`, 'i'), };
-        }
-        if (bank_url !== undefined) {
-            searchCriteria.bank_url = { $regex: new RegExp(`^${bank_url}$`, 'i'), };
-        }
-        if (Status !== undefined) {
-            searchCriteria.Status = { $regex: new RegExp(`^${Status}$`, 'i'), };
-        }
-
-        const foundBanks = await Bank.find(searchCriteria);
-
-        if (foundBanks.length > 0) {
-            return res.status(200).json({ 
-                message: "Bank found",
-                banks: foundBanks 
-            });
-        } else {
-            return res.status(404).json({ message: "Bank not found" });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
-=======
     if (bank_name !== undefined) {
       searchCriteria.bank_name = { $regex: new RegExp(`^${bank_name}$`, "i") };
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
     }
     if (div_id !== undefined) {
       searchCriteria.div_id = { $regex: new RegExp(`^${div_id}$`, "i") };

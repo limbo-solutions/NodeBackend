@@ -8,7 +8,6 @@ const {
 
 const router = express.Router();
 
-// Define user routes
 router.post("/settlements", createSettlement);
 router.get("/settlements", getSettlement);
 router.put("/updatesettlements", updateSettlement);

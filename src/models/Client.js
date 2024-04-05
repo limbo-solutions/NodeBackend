@@ -8,7 +8,7 @@ const clientSchema = new mongoose.Schema({
   city: String,
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   acquirer_name: String,
-  last_settled_date: { type: Date },
+  last_settled_date: { type: String },
 });
 
 const Client = mongoose.model("Client", clientSchema);

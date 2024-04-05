@@ -3,31 +3,13 @@ const mongoose = require("mongoose");
 require("../config/database");
 
 async function createCurrency(req, res) {
-<<<<<<< HEAD
-    try {
-      const { currency_name, currency_code, Status } = req.body;
-  
-      const currency = new Currency({
-        currency_name,
-        currency_code,
-        Status: Status || 'Active', 
-      });
-  
-      await currency.save();
-  
-      res.status(201).json({ message: "Currency created successfully", currency });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-=======
   try {
     const { currency_name, currency_code, Status } = req.body;
 
     const currency = new Currency({
       currency_name,
       currency_code,
-      status: Status || "Active",
+      Status: Status || "Active",
     });
 
     await currency.save();
@@ -38,7 +20,6 @@ async function createCurrency(req, res) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
   }
 }
 
@@ -94,39 +75,9 @@ async function deleteCurrency(req, res) {
   try {
     const { currency_name } = req.body;
 
-<<<<<<< HEAD
-  async function updateCurrency(req, res) {
-    try {
-      const { id, currency_name, currency_code, Status } = req.body;
-  
-      const existingCurrency = await Currency.findById(id);
-      if (!existingCurrency) {
-        return res.status(404).json({ error: "Currency not found" });
-      }
-      
-      if (currency_name) {
-        existingCurrency.currency_name = currency_name;
-      }
-      if (currency_code) {
-        existingCurrency.currency_code = currency_code;
-      }
-      if (Status) {
-        existingCurrency.Status = Status;
-      }
-      const updatedCurrency = await existingCurrency.save();
-      
-      res.status(200).json({
-        message: "Currency updated successfully",
-        currency: updatedCurrency,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal Server Error" });
-=======
     const existingCurrency = await Currency.findOne({ currency_name });
     if (!existingCurrency) {
       return res.status(404).json({ error: "Currency not found" });
->>>>>>> 51caf5f8106a5a1a6fd2e3672efd73eb2ff93cb6
     }
 
     await Currency.findOneAndDelete({ currency_name });
