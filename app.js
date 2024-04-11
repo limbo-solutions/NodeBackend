@@ -17,6 +17,7 @@ const CreatebankRoutes = require("./src/routes/createbankroute");
 const BusinesssubcategoryRoutes = require("./src/routes/businesssubcategoryroute");
 const DocumentcategoryRoutes = require("./src/routes/documentcategoryroute");
 const TransactionreportRoutes = require("./src/routes/transactionreportroute");
+const DashboardCardRoutes = require("./src/routes/dashboardcardroute");
 
 require("./src/config/database");
 
@@ -40,6 +41,7 @@ app.use("/", CreatebankRoutes);
 app.use("/", BusinesssubcategoryRoutes);
 app.use("/", DocumentcategoryRoutes);
 app.use("/", TransactionreportRoutes);
+app.use("/", DashboardCardRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
