@@ -12,6 +12,7 @@ async function createClient(req, res) {
       status,
       acquirer_name,
       last_settled_date,
+      currency,
     } = req.body;
 
     // Create a new client
@@ -24,6 +25,7 @@ async function createClient(req, res) {
       status,
       acquirer_name,
       last_settled_date,
+      currency,
     });
 
     // Save the client to the database

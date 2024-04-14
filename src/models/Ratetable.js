@@ -9,6 +9,7 @@ const ratetableSchema = new mongoose.Schema({
   settlement_fee: { type: Number },
   refund_fee: { type: Number },
   chargeback_fee: { type: Number },
+  currency: { type: String },
 });
 
 const Ratetable = mongoose.model("Ratetable", ratetableSchema);
