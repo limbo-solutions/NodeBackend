@@ -23,7 +23,6 @@ const successPercentageToday = async (req, res) => {
       },
       Status: "Success",
     });
-
     const totalTransactions = await Transactiontable.countDocuments({
       transactiondate: {
         $gte: fromDate,
@@ -306,6 +305,7 @@ const weeklyCardComparison = async (req, res) => {
       },
       cardtype: "Visa",
     });
+    h;
 
     const previousWeekVisaTransactions = await Transactiontable.find({
       transactiondate: {
@@ -511,60 +511,6 @@ const weeklySuccessMetrics = async (req, res) => {
   }
 };
 
-const monthlyTransactionMetrics = async (req, res) => {
-  try {
-    let numTransactions = 0;
-    let numSuccessfulTransactions = 0;
-    let totalAmountTransactions = 0;
-    let totalAmountSuccessfulTransactions = 0;
-
-    for (let i = 0; i <= 29; i++) {
-      const currentDate = new Date();
-      currentDate.setDate(currentDate.getDate() - i);
-
-      const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-      const successfulTransactions = await Transactiontable.find({
-        transactiondate: { $gte: fromDate, $lt: toDate },
-        Status: "Success",
-      });
-
-      numSuccessfulTransactions += successfulTransactions.length;
-      totalAmountSuccessfulTransactions += successfulTransactions.reduce(
-        (acc, txn) => acc + txn.amount,
-        0
-      );
-
-      const allTransactions = await Transactiontable.find({
-        transactiondate: { $gte: fromDate, $lt: toDate },
-      });
-
-      numTransactions += allTransactions.length;
-      totalAmountTransactions += allTransactions.reduce(
-        (acc, txn) => acc + txn.amount,
-        0
-      );
-    }
-
-    res.json({
-      numTransactions,
-      numSuccessfulTransactions,
-      totalAmountTransactions,
-      totalAmountSuccessfulTransactions,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 const last6Months = async (req, res) => {
   try {
     const today = new Date();
@@ -580,6 +526,7 @@ const last6Months = async (req, res) => {
     }
 
     const salesByMonth = [];
+    let totalSalesAmountAllMonths = 0;
 
     for (let i = 0; i < 6; i++) {
       const fromDate = `${("0" + sixMonthsAgo.getDate()).slice(-2)}/${(
@@ -591,9 +538,6 @@ const last6Months = async (req, res) => {
         (sixMonthsAgo.getMonth() + 2)
       ).slice(-2)}/${sixMonthsAgo.getFullYear()} 23:59:59`;
 
-      console.log(fromDate);
-      console.log(nextMonthDate);
-
       const sales = await Transactiontable.find({
         transactiondate: {
           $gte: fromDate,
@@ -604,6 +548,7 @@ const last6Months = async (req, res) => {
       let totalSalesAmount = 0;
       for (const sale of sales) {
         totalSalesAmount += sale.amount;
+        totalSalesAmountAllMonths += sale.amount;
       }
 
       const monthNames = [
@@ -631,7 +576,103 @@ const last6Months = async (req, res) => {
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() + 1);
     }
 
-    res.json(salesByMonth);
+    res.status(200).json({ salesByMonth, totalSalesAmountAllMonths });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const monthlyTransactionMetrics = async (req, res) => {
+  try {
+    let numTransactions = 0;
+    let numSuccessfulTransactions = 0;
+    let totalAmountTransactions = 0;
+    let totalAmountSuccessfulTransactions = 0;
+
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const firstDayOfPreviousMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      1
+    );
+
+    const lastDayOfPreviousMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      0
+    );
+
+    const fromDate = `${("0" + firstDayOfMonth.getDate()).slice(-2)}/${(
+      "0" +
+      (firstDayOfMonth.getMonth() + 1)
+    ).slice(-2)}/${firstDayOfMonth.getFullYear()} 00:00:00`;
+    const toDate = `${("0" + today.getDate()).slice(-2)}/${(
+      "0" +
+      (today.getMonth() + 1)
+    ).slice(-2)}/${today.getFullYear()} 23:59:59`;
+    const fromDatePreviousMonth = `${(
+      "0" + firstDayOfPreviousMonth.getDate()
+    ).slice(-2)}/${("0" + (firstDayOfPreviousMonth.getMonth() + 1)).slice(
+      -2
+    )}/${firstDayOfPreviousMonth.getFullYear()} 00:00:00`;
+    const toDatePreviousMonth = `${(
+      "0" + lastDayOfPreviousMonth.getDate()
+    ).slice(-2)}/${("0" + (lastDayOfPreviousMonth.getMonth() + 1)).slice(
+      -2
+    )}/${lastDayOfPreviousMonth.getFullYear()} 23:59:59`;
+
+    const successfulTransactionsThisMonth = await Transactiontable.find({
+      transactiondate: { $gte: fromDate, $lt: toDate },
+      Status: "Success",
+    });
+
+    const successfulTransactionsPreviousMonth = await Transactiontable.find({
+      transactiondate: {
+        $gte: fromDatePreviousMonth,
+        $lt: toDatePreviousMonth,
+      },
+      Status: "Success",
+    });
+
+    const allTransactions = await Transactiontable.find({
+      transactiondate: { $gte: fromDate, $lt: toDate },
+    });
+
+    numTransactions += allTransactions.length;
+    totalAmountTransactions += allTransactions.reduce(
+      (acc, txn) => acc + txn.amount,
+      0
+    );
+
+    numSuccessfulTransactions += successfulTransactionsThisMonth.length;
+    totalAmountSuccessfulTransactions += successfulTransactionsThisMonth.reduce(
+      (acc, txn) => acc + txn.amount,
+      0
+    );
+
+    const numSuccessfulTransactionsPreviousMonth =
+      successfulTransactionsPreviousMonth.length;
+    const totalAmountSuccessfulTransactionsPreviousMonth =
+      successfulTransactionsPreviousMonth.reduce(
+        (acc, txn) => acc + txn.amount,
+        0
+      );
+
+    const growthPercentage =
+      ((numSuccessfulTransactions - numSuccessfulTransactionsPreviousMonth) /
+        numSuccessfulTransactionsPreviousMonth) *
+      100;
+
+    res.json({
+      numTransactions,
+      numSuccessfulTransactions,
+      totalAmountTransactions,
+      totalAmountSuccessfulTransactions,
+      growthPercentage,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
