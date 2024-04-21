@@ -232,10 +232,7 @@ async function createSettlement(req, res) {
         console.log("In usd section");
 
         total_vol = parseFloat(
-          (
-            app_dec_calculation["EUR"]["total_volume"] *
-            parseFloat(eur_to_usd_exc_rate)
-          ).toFixed(3)
+          app_dec_calculation["EUR"]["approved_volume"].toFixed(3)
         );
 
         refunds_amount =
