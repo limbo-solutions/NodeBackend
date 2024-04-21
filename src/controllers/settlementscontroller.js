@@ -191,7 +191,7 @@ async function createSettlement(req, res) {
       }
       const settlementDate = new Date();
 
-      const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+      formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
         -2
       )}/${("0" + (settlementDate.getMonth() + 1)).slice(
         -2
@@ -260,9 +260,9 @@ async function createSettlement(req, res) {
         settlement_vol = result.settlement_vol;
 
         const settlementDate = new Date();
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -322,9 +322,9 @@ async function createSettlement(req, res) {
 
         const settlementDate = new Date();
 
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -379,9 +379,9 @@ async function createSettlement(req, res) {
         settlement_vol = result.settlement_vol;
 
         const settlementDate = new Date();
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -435,9 +435,9 @@ async function createSettlement(req, res) {
 
         const settlementDate = new Date();
 
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -467,8 +467,10 @@ async function createSettlement(req, res) {
         };
       }
     }
-
-    await settlement_record.save();
+    const settlementRecordInstance = new Settlementtable(settlement_record);
+    console.log(settlementRecordInstance);
+    // Save the record to the database
+    await settlementRecordInstance.save();
 
     res.status(201).json({
       success: true,
@@ -646,7 +648,7 @@ async function previewSettlement(req, res) {
       }
       const settlementDate = new Date();
 
-      const formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+      formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
         -2
       )}/${("0" + (settlementDate.getMonth() + 1)).slice(
         -2
@@ -715,9 +717,9 @@ async function previewSettlement(req, res) {
         settlement_vol = result.settlement_vol;
 
         const settlementDate = new Date();
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -777,9 +779,9 @@ async function previewSettlement(req, res) {
 
         const settlementDate = new Date();
 
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -834,9 +836,9 @@ async function previewSettlement(req, res) {
         settlement_vol = result.settlement_vol;
 
         const settlementDate = new Date();
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
@@ -890,9 +892,9 @@ async function previewSettlement(req, res) {
 
         const settlementDate = new Date();
 
-        const formattedSettlementDate = `${(
-          "0" + settlementDate.getDate()
-        ).slice(-2)}/${("0" + (settlementDate.getMonth() + 1)).slice(
+        formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(
+          -2
+        )}/${("0" + (settlementDate.getMonth() + 1)).slice(
           -2
         )}/${settlementDate.getFullYear()}`;
 
