@@ -50,99 +50,122 @@ const weeklyStats = async (req, res) => {
   try {
     const currentDate = new Date();
     const results = [];
-    const transactionCounts = [];
     let successThisWeek = 0;
     let failedThisWeek = 0;
+    const transactionCounts = [];
+    const previousWeekSuccessCounts = {};
     let totalNumTxn = 0;
 
-    // Get start and end dates for the week
-    const startDate = new Date(currentDate);
-    startDate.setDate(currentDate.getDate() - 6); // Start of the week
-    const endDate = new Date(currentDate);
-
-    // Fetch transactions for the entire week
-    const totalTransactions = await LiveTransactionTable.find({
-      transactiondate: { $gte: startDate, $lte: endDate },
-    });
-
-    // Process transactions for each day of the week
     for (let i = 0; i < 7; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + i);
+      const dayDate = new Date(currentDate);
+      dayDate.setDate(currentDate.getDate() - i);
 
-      const formattedDate = currentDate.toLocaleDateString("en-US");
+      const formattedFromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
 
-      const transactionsOfDay = totalTransactions.filter(
-        (transaction) =>
-          transaction.transactiondate.toDateString() ===
-          currentDate.toDateString()
-      );
+      const formattedToDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
 
-      const successAmount = transactionsOfDay
-        .filter((txn) => txn.Status === "Success")
-        .reduce((total, txn) => total + txn.amount, 0);
-      const failedAmount = transactionsOfDay
-        .filter((txn) => txn.Status === "Failed")
-        .reduce((total, txn) => total + txn.amount, 0);
-
-      results.push({
-        date: formattedDate,
-        successCount: transactionsOfDay.filter(
-          (txn) => txn.Status === "Success"
-        ).length,
-        failedCount: transactionsOfDay.filter((txn) => txn.Status === "Failed")
-          .length,
+      const totalTransactions = await LiveTransactionTable.find({
+        transactiondate: {
+          $gte: formattedFromDate,
+          $lte: formattedToDate,
+        },
       });
 
+      const { successTransactions, failedTransactions } =
+        totalTransactions.reduce(
+          (result, transaction) => {
+            if (transaction.Status === "Success") {
+              result.successTransactions.push(transaction);
+            } else if (transaction.Status === "Failed") {
+              result.failedTransactions.push(transaction);
+            }
+            return result;
+          },
+          { successTransactions: [], failedTransactions: [] }
+        );
+
+      const successAmount = successTransactions.reduce(
+        (total, txn) => total + txn.amount,
+        0
+      );
+      console.log("successAMout", successAmount);
+      const failedAmount = failedTransactions.reduce(
+        (total, txn) => total + txn.amount,
+        0
+      );
+      console.log("failedAmount", failedAmount);
+      results.push({
+        date: formattedFromDate.split(" ")[0],
+        successCount: successTransactions.length,
+        failedCount: failedTransactions.length,
+      });
+      console.log("results", results);
       successThisWeek += successAmount;
       failedThisWeek += failedAmount;
 
+      const transactionCount = totalTransactions.length;
+
       transactionCounts.push({
-        date: formattedDate,
-        count: transactionsOfDay.length,
+        date: dayDate.toLocaleDateString("en-US"),
+        count: transactionCount,
       });
 
-      totalNumTxn += transactionsOfDay.length;
+      totalNumTxn += transactionCount;
     }
 
-    // Calculate previous week's success counts
-    const previousWeekSuccessCounts = {};
     for (let i = 7; i < 14; i++) {
-      const previousDate = new Date(startDate);
-      previousDate.setDate(startDate.getDate() - i);
+      const dayDate = new Date(currentDate);
+      dayDate.setDate(currentDate.getDate() - i);
 
-      const fromDate = new Date(previousDate);
-      fromDate.setHours(0, 0, 0, 0);
-      const toDate = new Date(previousDate);
-      toDate.setHours(23, 59, 59, 999);
+      const fromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
+      const toDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
 
       const successfulCount = await LiveTransactionTable.countDocuments({
-        transactiondate: { $gte: fromDate, $lte: toDate },
+        transactiondate: {
+          $gte: fromDate,
+          $lte: toDate,
+        },
         Status: "Success",
       });
-
-      previousWeekSuccessCounts[previousDate.toLocaleDateString("en-US")] =
+      previousWeekSuccessCounts[dayDate.toLocaleDateString("en-US")] =
         successfulCount;
     }
 
-    // Calculate total this week and percentage change
     const totalThisWeek = parseFloat(
       (successThisWeek + failedThisWeek).toFixed(3)
     );
     const totalPreviousWeekSuccessCount = Object.values(
       previousWeekSuccessCounts
     ).reduce((total, count) => total + count, 0);
-    const percentageChange =
-      totalPreviousWeekSuccessCount !== 0
-        ? ((successThisWeek - totalPreviousWeekSuccessCount) /
-            (totalPreviousWeekSuccessCount + successThisWeek)) *
-          100
-        : 100;
+
+    let percentageChange;
+    if (totalPreviousWeekSuccessCount !== 0) {
+      percentageChange =
+        ((successThisWeek - totalPreviousWeekSuccessCount) /
+          (totalPreviousWeekSuccessCount + successThisWeek)) *
+        100;
+    } else {
+      percentageChange = 100;
+    }
+    successThisWeek = parseFloat(successThisWeek.toFixed(3));
+    failedThisWeek = parseFloat(failedThisWeek.toFixed(3));
 
     res.status(200).json({
       results,
-      successThisWeek: parseFloat(successThisWeek.toFixed(3)),
-      failedThisWeek: parseFloat(failedThisWeek.toFixed(3)),
+      successThisWeek,
+      failedThisWeek,
       totalThisWeek,
       transactionCounts,
       totalNumTxn,
