@@ -32,7 +32,7 @@ const handleDashboardRequest = (req, res, next) => {
       successlast6Months: Adminsuccesslast6Months,
       monthlyTransactionMetrics: AdminmonthlyTransactionMetrics,
     },
-    dummy: {
+    user: {
       todaystats: DummysuccessPercentageToday,
       weeklystats: DummyweeklyStats,
       cardcomparison: DummyweeklyCardComparison,
