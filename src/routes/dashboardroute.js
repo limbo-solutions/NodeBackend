@@ -26,16 +26,16 @@ const handleDashboardRequest = (req, res, next) => {
   const controllers = {
     admin: {
       todaystats: AdminsuccessPercentageToday,
-      weeklyStats: AdminweeklyStats,
-      cardComparison: AdminweeklyCardComparison,
+      weeklystats: AdminweeklyStats,
+      cardcomparison: AdminweeklyCardComparison,
       weeklyTop4Countries: AdminweeklyTop4Countries,
       successlast6Months: Adminsuccesslast6Months,
       monthlyTransactionMetrics: AdminmonthlyTransactionMetrics,
     },
     dummy: {
       todaystats: DummysuccessPercentageToday,
-      weeklyStats: DummyweeklyStats,
-      cardComparison: DummyweeklyCardComparison,
+      weeklystats: DummyweeklyStats,
+      cardcomparison: DummyweeklyCardComparison,
       weeklyTop4Countries: DummyweeklyTop4Countries,
       successlast6Months: Dummysuccesslast6Months,
       monthlyTransactionMetrics: DummymonthlyTransactionMetrics,

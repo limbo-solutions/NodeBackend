@@ -17,7 +17,6 @@ const CreatebankRoutes = require("./src/routes/createbankroute");
 const BusinesssubcategoryRoutes = require("./src/routes/businesssubcategoryroute");
 const DocumentcategoryRoutes = require("./src/routes/documentcategoryroute");
 const TransactionreportRoutes = require("./src/routes/transactionreportroute");
-// const DashboardCardRoutes = require("./src/routes/dashboardcardroute");
 const LiveTransactionData = require("./src/routes/livetransactiontableroute");
 const DashboardCardRoutes = require("./src/routes/dashboardroute");
 const NewRoutes = require("./src/routes/newroute");
