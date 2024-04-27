@@ -16,7 +16,7 @@ async function login(req, res) {
         { userId: user.id, email, role: user.role },
         process.env.SECRET_KEY,
         {
-          expiresIn: "30m",
+          expiresIn: "1d",
         }
       );
 
