@@ -482,7 +482,8 @@ async function createSettlement(req, res) {
       usd_to_eur_exc_rate,
       note,
     } = req.body;
-
+console.log(fromDate);
+console.log(toDate);
     var [year, month, day] = fromDate.substring(0, 10).split("-");
     const formattedfromDate = `${day}/${month}/${year} 13:00:00`;
 
@@ -1102,6 +1103,8 @@ async function previewSettlement(req, res) {
       note,
     } = req.body;
 
+    console.log(fromDate);
+    console.log(toDate);
     var [year, month, day] = fromDate.substring(0, 10).split("-");
     const formattedfromDate = `${day}/${month}/${year} 15:15:00`;
 

@@ -14,7 +14,8 @@ const AdminsuccessPercentageToday = async (req, res) => {
       "0" +
       (currentDate.getMonth() + 1)
     ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
+console.log(fromDate)
+console.log
     const query = {
       transactiondate: { $gte: fromDate, $lte: toDate },
       currency: currency,
@@ -225,9 +226,11 @@ const AdminweeklyStats = async (req, res) => {
   try {
     const currentDate = new Date();
     const results = [];
+    const transactionCounts = [];
     let successThisWeek = 0;
     let failedThisWeek = 0;
     let incompleteThisWeek=0;
+    let totalNumTxn = 0;
 
     const oneDayMilliseconds = 24 * 60 * 60 * 1000; 
 
@@ -276,15 +279,19 @@ const AdminweeklyStats = async (req, res) => {
       results.push({
         date: dayFormatted,
         successCount,
-        failedCount,
-        totalCount: successCount + failedCount + incompleteCount
+        failedCount
       });
+      transactionCounts.push({
+        date: dayFormatted,
+        totalCount: successCount + failedCount + incompleteCount
+      })
 
       successThisWeek += successAmount;
       failedThisWeek += failedAmount;
       incompleteThisWeek += incompleteAmount;
 
       totalThisWeek = successThisWeek + failedThisWeek + incompleteThisWeek ;
+      totalNumTxn += successCount + failedCount + incompleteCount
     }
 
     const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
@@ -336,6 +343,8 @@ const AdminweeklyStats = async (req, res) => {
       successThisWeek: parseFloat(successThisWeek.toFixed(3)),
       failedThisWeek: parseFloat(failedThisWeek.toFixed(3)),
       totalThisWeek: parseFloat(totalThisWeek.toFixed(3)),
+      transactionCounts,
+      totalNumTxn,
       percentageChange
     });
   } catch (error) {
@@ -459,6 +468,7 @@ const AdminweeklyTop4Countries = async (req, res) => {
       -2
     )}/${currentDate.getFullYear()} 23:59:59`;
 
+    
     const aggregationPipeline = [
       {
         $match: {
@@ -505,17 +515,28 @@ const AdminmonthlyTransactionMetrics = async (req, res) => {
     const thirtyDaysAgo = new Date(today);
     thirtyDaysAgo.setMonth(today.getMonth() - 1);
 console.log(thirtyDaysAgo)
+
+const sixtyDaysAgo = new Date(today);
+sixtyDaysAgo.setMonth(today.getMonth() - 2);
+console.log(sixtyDaysAgo)
+
       const formattedFromDate = `${("0" + thirtyDaysAgo.getDate()).slice(-2)}/${(
         "0" +
         (thirtyDaysAgo.getMonth() + 1)
       ).slice(-2)}/${thirtyDaysAgo.getFullYear()} 00:00:00`;
 console.log(formattedFromDate)
+
       const formattedToDate = `${("0" + today.getDate()).slice(-2)}/${(
         "0" +
         (today.getMonth() + 1)
       ).slice(-2)}/${today.getFullYear()} 23:59:59`;
 console.log(formattedToDate)
 
+const formattedpreviousFromdate = `${("0" + sixtyDaysAgo.getDate()).slice(-2)}/${(
+  "0" +
+  (sixtyDaysAgo.getMonth() + 1)
+).slice(-2)}/${sixtyDaysAgo.getFullYear()} 00:00:00`;
+console.log(formattedpreviousFromdate)
       const aggregationPipeline = [
         {
           $match: {
@@ -531,8 +552,13 @@ console.log(formattedToDate)
           $group: {
             _id: null,
             numTransactions: { $sum: 1 },
-            totalAmountTransactions: { $sum: "$amount" },
-            
+      numSuccessfulTransactions: {
+        $sum: { $cond: [{ $eq: ["$Status", "Success"] }, 1, 0] }
+      },
+      totalAmountTransactions: { $sum: "$amount" },
+      totalAmountSuccessfulTransactions: {
+        $sum: { $cond: [{ $eq: ["$Status", "Success"] }, "$amount", 0] }
+      }
           },
         },
       ];
@@ -544,13 +570,42 @@ console.log(formattedToDate)
         numSuccessfulTransactions,
         totalAmountTransactions,
         totalAmountSuccessfulTransactions,
-      } = results[0]; // Extract values from aggregation result
+      } = results[0]; 
   
-      const growthPercentage =
-        numSuccessfulTransactions === 0
+      const newaggregationPipeline = [
+        {
+          $match: {
+            transactiondate: {
+              $gte: formattedpreviousFromdate,
+              $lte: formattedFromDate,
+            },
+            currency: currency,
+            merchant: merchant || { $exists: true }, 
+          },
+        },
+        {
+          $group: {
+            _id: null,
+      numSuccessfulTransactions: {
+        $sum: { $cond: [{ $eq: ["$Status", "Success"] }, 1, 0] }
+      }
+          },
+        },
+      ];
+  
+      const newresults = await LiveTransactionTable.aggregate(newaggregationPipeline);
+  console.log(newresults)
+
+  const 
+    previousnumSuccessfulTransactions
+   = newresults.length > 0 ? newresults[0].previousnumSuccessfulTransactions : 0; 
+console.log(previousnumSuccessfulTransactions)
+      
+const growthPercentage =
+        previousnumSuccessfulTransactions === 0
           ? 100
-          : ((numSuccessfulTransactions - results[1].numSuccessfulTransactions) /
-              results[1].numSuccessfulTransactions) *
+          : ((numSuccessfulTransactions - previousnumSuccessfulTransactions) /
+          previousnumSuccessfulTransactions) *
             100;
   
       res.status(200).json({
@@ -592,13 +647,14 @@ const Adminsuccesslast6Months = async (req, res) => {
         currentDate.getFullYear(),
         currentDate.getMonth() - i,
         1
-      );
+      ).to;
       const endDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - i + 1,
         0
-      );
-
+      ).toISOString();
+console.log(startDate);
+console.log(endDate)
       const filteredTransactions = transactions.filter((transaction) => {
         const transactionDate = new Date(
           transaction.transactiondate.replace(
@@ -608,7 +664,7 @@ const Adminsuccesslast6Months = async (req, res) => {
         );
         return transactionDate >= startDate && transactionDate <= endDate;
       });
-
+// console.log(filteredTransactions)
       let totalAmount = filteredTransactions.reduce(
         (total, transaction) => total + transaction.amount,
         0
