@@ -4,7 +4,7 @@ const {
   signup,
   getUsers,
   updateUser,
-  userDetails,
+  userDetails,userShortcut, getUserShortcuts, deleteUserShortcuts
 } = require("../controllers/userscontroller");
 
 const router = express.Router();
@@ -14,5 +14,8 @@ router.post("/signup", signup);
 router.get("/signup", verifyToken, getUsers);
 router.patch("/updateUser", verifyToken, updateUser);
 router.get("/userdetails", verifyToken, userDetails);
+router.post("/usershortcut", verifyToken, userShortcut)
+router.get("/getshortcuts", verifyToken, getUserShortcuts);
+router.delete("/deleteshortcut", verifyToken, deleteUserShortcuts);
 
 module.exports = router;

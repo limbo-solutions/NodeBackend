@@ -7,35 +7,43 @@ const DummysuccessPercentageToday = async (req, res) => {
     const fromDate = "17/04/2024 00:00:00";
     const toDate = "17/04/2024 23:59:59";
 
+    const query = {
+      transactiondate: { $gte: fromDate, $lte: toDate },
+      currency: currency,
+    };
+
     if (merchant) {
-      transactions = await Transactiontable.find({
-        transactiondate: { $gte: fromDate, $lte: toDate },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      transactions = await Transactiontable.find({
-        transactiondate: { $gte: fromDate, $lte: toDate },
-        currency: currency,
-      });
+      query.merchant = merchant;
     }
-    const totalTransactions = transactions.length;
 
-    const successfulTransactions = transactions.filter(
-      (transaction) => transaction.Status === "Success"
-    );
-
-    const successCount = successfulTransactions.length;
-
-    const successPercentage =
-      totalTransactions === 0 ? 0 : (successCount / totalTransactions) * 100;
-
-    const successAmount = successfulTransactions.reduce(
-      (total, transaction) => {
-        return total + transaction.amount;
+    const aggregationPipeline = [
+      {
+        $match: query,
       },
-      0
-    );
+      {
+        $group: {
+          _id: "$Status",
+          count: { $sum: 1 },
+          totalAmount: { $sum: { $cond: [{ $eq: ["$Status", "Success"] }, "$amount", 0] } }
+        }
+      }
+    ];
+
+    const resultsForDay = await Transactiontable.aggregate(aggregationPipeline);
+
+    const successResult = resultsForDay.find(result => result._id === "Success") || { count: 0, totalAmount: 0 };
+    const failedResult = resultsForDay.find(result => result._id === "Failed") || { count: 0 };
+    const incompleteResult = resultsForDay.find(result => result._id === "Incompleted") || { count: 0 };
+
+    const successCount = successResult.count;
+    const failedCount = failedResult.count;
+    const incompleteCount = incompleteResult.count;
+
+    const successAmount = successResult.totalAmount;
+
+    const totalTransactions = successCount + failedCount + incompleteCount;
+
+    const successPercentage = totalTransactions === 0 ? 0 : (successCount / totalTransactions) * 100;
 
     res.status(200).json({
       successPercentage: successPercentage.toFixed(2),
@@ -53,150 +61,148 @@ const DummyweeklyStats = async (req, res) => {
   try {
     const currentDate = new Date(2024, 3, 17);
     const results = [];
+    const transactionCounts = [];
     let successThisWeek = 0;
     let failedThisWeek = 0;
-    const transactionCounts = [];
-    const previousWeekSuccessCounts = {};
+    let incompleteThisWeek=0;
+    let currentWeekSuccessTotalCount = 0
     let totalNumTxn = 0;
 
+    const oneDayMilliseconds = 24 * 60 * 60 * 1000; 
+
     for (let i = 0; i < 7; i++) {
-      const dayDate = new Date(currentDate);
-      dayDate.setDate(currentDate.getDate() - i);
+  const dayDate = new Date(currentDate.getTime() - i * oneDayMilliseconds);
 
-      const formattedFromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
-        "0" +
-        (dayDate.getMonth() + 1)
-      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
+  // const fromDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0).toISOString();
+  // const toDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59).toISOString();
 
-      const formattedToDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
-        "0" +
-        (dayDate.getMonth() + 1)
-      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
+  const fromDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0);
+  const toDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59);
 
+  const formattedFromDate = `${("0" + fromDate.getDate()).slice(-2)}/${("0" + (fromDate.getMonth() + 1)).slice(-2)}/${fromDate.getFullYear()} 00:00:00`;
+  const formattedToDate = `${("0" + toDate.getDate()).slice(-2)}/${("0" + (toDate.getMonth() + 1)).slice(-2)}/${toDate.getFullYear()} 23:59:59`;
+
+      const query = {
+        transactiondate: { $gte: formattedFromDate, $lte: formattedToDate },
+        currency: currency
+      };
       if (merchant) {
-        totalTransactions = await Transactiontable.find({
-          transactiondate: {
-            $gte: formattedFromDate,
-            $lte: formattedToDate,
-          },
-          currency: currency,
-          merchant: merchant,
-        });
-      } else {
-        totalTransactions = await Transactiontable.find({
-          transactiondate: {
-            $gte: formattedFromDate,
-            $lte: formattedToDate,
-          },
-          currency: currency,
-        });
+        query.merchant = merchant;
       }
-      const { successTransactions, failedTransactions } =
-        totalTransactions.reduce(
-          (result, transaction) => {
-            if (transaction.Status === "Success") {
-              result.successTransactions.push(transaction);
-            } else if (transaction.Status === "Failed") {
-              result.failedTransactions.push(transaction);
-            }
-            return result;
-          },
-          { successTransactions: [], failedTransactions: [] }
-        );
 
-      const successAmount = successTransactions.reduce(
-        (total, txn) => total + txn.amount,
-        0
-      );
-      console.log("successAMout", successAmount);
-      const failedAmount = failedTransactions.reduce(
-        (total, txn) => total + txn.amount,
-        0
-      );
-      console.log("failedAmount", failedAmount);
+      // const query = {
+      //   transactiondate: { $gte: fromDate, $lte: toDate },
+      //   currency: currency
+      // };
+      // if (merchant) {
+      //   query.merchant = merchant;
+      // }
+
+      const aggregationPipeline = [
+        { $match: query },
+        {$group: { 
+          _id: "$Status", 
+          count: { $sum: 1 }, 
+          totalAmount: { $sum: "$amount" } 
+        } }
+      ];
+
+      const resultsForDay = await Transactiontable.aggregate(aggregationPipeline);
+      
+      const successResult = resultsForDay.find(result => result._id === "Success");
+      const failedResult = resultsForDay.find(result => result._id === "Failed");
+      const incompleteResult = resultsForDay.find(result => result._id === "Incompleted");
+
+      const successCount = successResult ? successResult.count : 0;
+      const failedCount = failedResult ? failedResult.count : 0;
+      const incompleteCount = incompleteResult ? incompleteResult.count : 0;
+
+      const successAmount = successResult ? successResult.totalAmount : 0;
+      const failedAmount = failedResult ? failedResult.totalAmount : 0;
+      const incompleteAmount = incompleteResult ? incompleteResult.totalAmount : 0;
+
+      const dayFormatted = dayDate.toLocaleDateString("en-US");
+
       results.push({
-        date: formattedFromDate.split(" ")[0],
-        successCount: successTransactions.length,
-        failedCount: failedTransactions.length,
+        date: dayFormatted,
+        successCount,
+        failedCount
       });
-      console.log("results", results);
+      transactionCounts.push({
+        date: dayFormatted,
+        totalCount: successCount + failedCount + incompleteCount
+      })
+      currentWeekSuccessTotalCount += successCount
+
       successThisWeek += successAmount;
       failedThisWeek += failedAmount;
+      incompleteThisWeek += incompleteAmount;
 
-      const transactionCount = totalTransactions.length;
-
-      transactionCounts.push({
-        date: dayDate.toLocaleDateString("en-US"),
-        count: transactionCount,
-      });
-
-      totalNumTxn += transactionCount;
+      totalThisWeek = successThisWeek + failedThisWeek + incompleteThisWeek ;
+      totalNumTxn += successCount + failedCount + incompleteCount
     }
 
-    for (let i = 7; i < 14; i++) {
-      const dayDate = new Date(currentDate);
-      dayDate.setDate(currentDate.getDate() - i);
+    const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const previousweekendDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const fromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
-        "0" +
-        (dayDate.getMonth() + 1)
-      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
-        "0" +
-        (dayDate.getMonth() + 1)
-      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
+  //   const fromDate = new Date(previousweekstartDate.getFullYear(), previousweekstartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0).toISOString();
+  // const toDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59).toISOString();
 
-      if (merchant) {
-        successfulCount = await Transactiontable.countDocuments({
-          transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
-          },
-          Status: "Success",
-          currency: currency,
-          merchant: merchant,
-        });
-      } else {
-        successfulCount = await Transactiontable.countDocuments({
-          transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
-          },
-          Status: "Success",
-          currency: currency,
-        });
-      }
-      previousWeekSuccessCounts[dayDate.toLocaleDateString("en-US")] =
-        successfulCount;
+  // const query = {
+  //   transactiondate: { $gte: fromDate, $lte: toDate },
+  //   Status: "Success",
+  //   currency: currency
+  // };
+
+  const fromDate = new Date(previousweekstartDate.getFullYear(), previousweekstartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0);
+  const toDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59);
+
+  const formattedFromDate = `${("0" + fromDate.getDate()).slice(-2)}/${("0" + (fromDate.getMonth() + 1)).slice(-2)}/${fromDate.getFullYear()} 00:00:00`;
+  const formattedToDate = `${("0" + toDate.getDate()).slice(-2)}/${("0" + (toDate.getMonth() + 1)).slice(-2)}/${toDate.getFullYear()} 23:59:59`;
+
+  const query = {
+    transactiondate: { $gte: formattedFromDate, $lte: formattedToDate },
+    Status: "Success",
+    currency: currency
+  };
+  
+  if (merchant) {
+    query.merchant = merchant;
+  }
+  
+  const aggregationPipeline = [
+    { $match: query },
+    { 
+      $group: { 
+        _id: null, 
+        count: { $sum: 1 }
+      } 
     }
+  ];
+  
+  const previousresults = await Transactiontable.aggregate(aggregationPipeline);
 
-    const totalThisWeek = parseFloat(
-      (successThisWeek + failedThisWeek).toFixed(3)
-    );
-    const totalPreviousWeekSuccessCount = Object.values(
-      previousWeekSuccessCounts
-    ).reduce((total, count) => total + count, 0);
-
+  const previousWeekSuccessTotalCount = previousresults.length > 0 ? previousresults[0].count : 0;
+  console.log(currentWeekSuccessTotalCount);
+  console.log(previousWeekSuccessTotalCount)
     let percentageChange;
-    if (totalPreviousWeekSuccessCount !== 0) {
+    if (previousWeekSuccessTotalCount !== 0) {
       percentageChange =
-        ((successThisWeek - totalPreviousWeekSuccessCount) /
-          (totalPreviousWeekSuccessCount + successThisWeek)) *
+        ((currentWeekSuccessTotalCount - previousWeekSuccessTotalCount) /
+          (previousWeekSuccessTotalCount)) *
         100;
     } else {
       percentageChange = 100;
     }
-    successThisWeek = parseFloat(successThisWeek.toFixed(3));
-    failedThisWeek = parseFloat(failedThisWeek.toFixed(3));
 
     res.status(200).json({
       results,
-      successThisWeek,
-      failedThisWeek,
-      totalThisWeek,
+      successThisWeek: parseFloat(successThisWeek.toFixed(3)),
+      failedThisWeek: parseFloat(failedThisWeek.toFixed(3)),
+      totalThisWeek: parseFloat(totalThisWeek.toFixed(3)),
       transactionCounts,
       totalNumTxn,
-      percentageChange,
+      percentageChange : parseFloat(percentageChange.toFixed(3))
     });
   } catch (error) {
     console.error("Error calculating past seven days counts:", error);
@@ -207,104 +213,62 @@ const DummyweeklyStats = async (req, res) => {
 const DummyweeklyCardComparison = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
+    query = {
+      transactiondate: { $gte: "10/04/2024 00:00:00", $lte: "17/04/2024 23:59:59" },
+      currency: currency
+    };
     if (merchant) {
-      currentWeekTransactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "10/04/2024 00:00:00",
-          $lte: "17/04/2024 23:59:59",
-        },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      currentWeekTransactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "10/04/2024 00:00:00",
-          $lte: "10/04/2024 00:00:00",
-        },
-        currency: currency,
-      });
+      query.merchant = merchant;
     }
 
+    aggregationPipeline = [
+      { $match: query },
+      {$group: { 
+        _id: "$cardtype", 
+        totalAmount: { $sum: "$amount" } 
+      } }
+    ];
+
+    const resultsForCurrent = await Transactiontable.aggregate(aggregationPipeline);
+    console.log(resultsForCurrent)
+    const CurrentvisaResult = resultsForCurrent.find(result => result._id === "Visa");
+    const CurrentmastercardResult = resultsForCurrent.find(result => result._id === "Mastercard");
+
+    const currentWeekVisaAmount = CurrentvisaResult ? CurrentvisaResult.totalAmount : 0;
+    const currentWeekMastercardAmount = CurrentmastercardResult ? CurrentmastercardResult.totalAmount : 0;
+
+    queryPrevious = {
+      transactiondate: { $gte: "03/04/2024 00:00:00", $lte: "10/04/2024 23:59:59"},
+      currency: currency
+    };
     if (merchant) {
-      previousWeekTransactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "03/04/2024 00:00:00",
-          $lte: "10/04/2024 23:59:59",
-        },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      previousWeekTransactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "03/04/2024 00:00:00",
-          $lte: "10/04/2024 23:59:59",
-        },
-        currency: currency,
-      });
+      queryPrevious.merchant = merchant;
     }
+    aggregationPipeline = [
+      { $match: queryPrevious },
+      {$group: { 
+        _id: "$cardtype", 
+        totalAmount: { $sum: "$amount" } 
+      } }
+    ];
 
-    const { currentWeekVisaTransactions, currentWeekMastercardTransactions } =
-      currentWeekTransactions.reduce(
-        (result, transaction) => {
-          if (transaction.cardtype === "Visa") {
-            result.currentWeekVisaTransactions.push(transaction);
-          } else if (transaction.cardtype === "Mastercard") {
-            result.currentWeekMastercardTransactions.push(transaction);
-          }
-          return result;
-        },
-        {
-          currentWeekVisaTransactions: [],
-          currentWeekMastercardTransactions: [],
-        }
-      );
+    const resultsForPrevious = await Transactiontable.aggregate(aggregationPipeline);
+    console.log(resultsForPrevious)
+    
+    const PreviousvisaResult = resultsForPrevious.find(result => result._id === "Visa");
+    const PreviousmastercardResult = resultsForPrevious.find(result => result._id === "Mastercard");
 
-    const { previousWeekVisaTransactions, previousWeekMastercardTransactions } =
-      previousWeekTransactions.reduce(
-        (result, transaction) => {
-          if (transaction.cardtype === "Visa") {
-            result.previousWeekVisaTransactions.push(transaction);
-          } else if (transaction.cardtype === "Mastercard") {
-            result.previousWeekMastercardTransactions.push(transaction);
-          }
-          return result;
-        },
-        {
-          previousWeekVisaTransactions: [],
-          previousWeekMastercardTransactions: [],
-        }
-      );
-
-    const currentWeekVisaAmount = currentWeekVisaTransactions.reduce(
-      (total, transaction) => total + transaction.amount,
-      0
-    );
-    const previousWeekVisaAmount = previousWeekVisaTransactions.reduce(
-      (total, transaction) => total + transaction.amount,
-      0
-    );
-
-    const currentWeekMastercardAmount =
-      currentWeekMastercardTransactions.reduce(
-        (total, transaction) => total + transaction.amount,
-        0
-      );
-    const previousWeekMastercardAmount =
-      previousWeekMastercardTransactions.reduce(
-        (total, transaction) => total + transaction.amount,
-        0
-      );
+    const PreviousWeekVisaAmount = PreviousvisaResult ? PreviousvisaResult.totalAmount : 0;
+    const PreviousWeekMastercardAmount = PreviousmastercardResult ? PreviousmastercardResult.totalAmount : 0;
 
     const visaDifference = parseFloat(
-      (currentWeekVisaAmount - previousWeekVisaAmount).toFixed(3)
+      (currentWeekVisaAmount - PreviousWeekVisaAmount).toFixed(3)
     );
     const mastercardDifference = parseFloat(
-      (currentWeekMastercardAmount - previousWeekMastercardAmount).toFixed(3)
+      (currentWeekMastercardAmount - PreviousWeekMastercardAmount).toFixed(3)
     );
 
-    res.status(200).json({ visaDifference, mastercardDifference });
+    res.status(200).json({ visaDifference: parseFloat(visaDifference.toFixed(3)), mastercardDifference: parseFloat(mastercardDifference.toFixed(3)) });
   } catch (error) {
     console.error("Error calculating card transaction difference:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -314,71 +278,37 @@ const DummyweeklyCardComparison = async (req, res) => {
 const DummyweeklyTop4Countries = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
-    const countryStats = {};
-
-    if (merchant) {
-      transactionsCurrentWeek = await Transactiontable.find({
-        transactiondate: {
-          $gte: "10/04/2024 00:00:00",
-          $lte: "17/04/2024 23:59:59",
+    const aggregationPipeline = [
+      {
+        $match: {
+          transactiondate: {
+            $gte: "10/04/2024 00:00:00" ,
+            $lte: "17/04/2024 23:59:59",
+          },
+          currency: currency,
+          merchant: merchant || { $exists: true }, 
+          country: { $ne: "0" }, 
         },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      transactionsCurrentWeek = await Transactiontable.find({
-        transactiondate: {
-          $gte: "10/04/2024 00:00:00",
-          $lte: "17/04/2024 23:59:59",
+      },
+      {
+        $group: {
+          _id: "$country",
+          transactionCount: { $sum: 1 },
+          totalAmount: { $sum: "$amount" },
         },
-        currency: currency,
-      });
-    }
+      },
+      {
+        $sort: { transactionCount: -1 },
+      },
+      {
+        $limit: 4,
+      },
+    ];
 
-    const filteredTransactions = transactionsCurrentWeek.filter(
-      (transaction) => transaction.country !== "0"
-    );
-
-    filteredTransactions.forEach((transaction) => {
-      const country = transaction.country;
-
-      if (!countryStats[country]) {
-        countryStats[country] = {
-          transactionCount: 0,
-          totalAmount: 0,
-        };
-      }
-
-      countryStats[country].transactionCount++;
-      countryStats[country].totalAmount += transaction.amount;
-    });
-
-    const sortedCountries = Object.keys(countryStats).sort((a, b) => {
-      return (
-        countryStats[b].transactionCount - countryStats[a].transactionCount
-      );
-    });
-
-    const top4Countries = sortedCountries.slice(0, 4);
-    const sumOfAmounts = parseFloat(
-      top4Countries
-        .reduce((sum, country) => {
-          return sum + countryStats[country].totalAmount;
-        }, 0)
-        .toFixed(3)
-    );
-
-    const results = top4Countries.map((country) => ({
-      country: country,
-      transactionCount: parseFloat(
-        countryStats[country].transactionCount.toFixed(3)
-      ),
-      totalAmount: parseFloat(countryStats[country].totalAmount.toFixed(3)),
-    }));
+    const results = await Transactiontable.aggregate(aggregationPipeline);
 
     res.status(200).json({
       topCountries: results,
-      sumOfAmounts: sumOfAmounts,
     });
   } catch (error) {
     console.error("Error calculating top 4 country stats for the week:", error);
@@ -389,94 +319,71 @@ const DummyweeklyTop4Countries = async (req, res) => {
 const DummymonthlyTransactionMetrics = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
-    let numTransactions = 0;
-    let numSuccessfulTransactions = 0;
-    let totalAmountTransactions = 0;
-    let totalAmountSuccessfulTransactions = 0;
 
-    if (merchant) {
-      transactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "17/03/2024 00:00:00",
-          $lte: "17/04/2024 23:59:59",
+    const pipeline = [
+      {
+        $match: {
+          transactiondate: {
+            $gte: "17/03/2024 00:00:00",
+            $lte: "17/04/2024 23:59:59",
+          },
+          currency: currency,
+          ...(merchant && { merchant: merchant }),
         },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      transactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "17/03/2024 00:00:00",
-          $lte: "17/04/2024 23:59:59",
+      },
+      {
+        $group: {
+          _id: null,
+          numTransactions: { $sum: 1 },
+          totalAmountTransactions: { $sum: "$amount" },
+          numSuccessfulTransactions: {
+            $sum: { $cond: [{ $eq: ["$Status", "Success"] }, 1, 0] },
+          },
+          totalAmountSuccessfulTransactions: {
+            $sum: { $cond: [{ $eq: ["$Status", "Success"] }, "$amount", 0] },
+          },
         },
-        currency: currency,
-      });
+      },
+    ];
+
+    const result = await Transactiontable.aggregate(pipeline);
+
+    let growthPercentage = 100;
+    if (result.length > 0) {
+      // Previous month aggregation
+      const previousMonthResult = await Transactiontable.aggregate([
+        {
+          $match: {
+            transactiondate: {
+              $gte: "17/02/2024 00:00:00",
+              $lte: "17/03/2024 23:59:59",
+            },
+            currency: currency,
+            ...(merchant && { merchant: merchant }),
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            numSuccessfulTransactionsPreviousMonth: {
+              $sum: { $cond: [{ $eq: ["$Status", "Success"] }, 1, 0] },
+            },
+          },
+        },
+      ]);
+
+      if (previousMonthResult.length > 0) {
+        const { numSuccessfulTransactionsPreviousMonth } = previousMonthResult[0];
+        growthPercentage = ((result[0].numSuccessfulTransactions - numSuccessfulTransactionsPreviousMonth) / numSuccessfulTransactionsPreviousMonth) * 100;
+      }
     }
-
-    numTransactions += transactions.length;
-    totalAmountTransactions += transactions.reduce(
-      (total, txn) => total + txn.amount,
-      0
-    );
-    totalAmountTransactions = parseFloat(totalAmountTransactions.toFixed(3));
-    successfulTransactions = transactions.filter(
-      (txn) => txn.Status === "Success"
-    );
-    numSuccessfulTransactions += successfulTransactions.length;
-    totalAmountSuccessfulTransactions += successfulTransactions.reduce(
-      (total, txn) => total + txn.amount,
-      0
-    );
-
-    totalAmountSuccessfulTransactions = parseFloat(
-      totalAmountSuccessfulTransactions.toFixed(3)
-    );
-
-    let numTransactionsPreviousMonth = 0;
-    let numSuccessfulTransactionsPreviousMonth = 0;
-
-    if (merchant) {
-      transactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "17/02/2024 00:00:00",
-          $lte: "17/03/2024 23:59:59",
-        },
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      transactions = await Transactiontable.find({
-        transactiondate: {
-          $gte: "17/02/2024 00:00:00",
-          $lte: "17/03/2024 23:59:59",
-        },
-        currency: currency,
-      });
-    }
-    numTransactionsPreviousMonth += transactions.length;
-
-    successfulTransactions = transactions.filter(
-      (txn) => txn.Status === "Success"
-    );
-    numSuccessfulTransactionsPreviousMonth += successfulTransactions.length;
-
-    const growthPercentage =
-      numSuccessfulTransactionsPreviousMonth === 0
-        ? 100
-        : ((numSuccessfulTransactions -
-            numSuccessfulTransactionsPreviousMonth) /
-            numSuccessfulTransactionsPreviousMonth) *
-          100;
 
     res.status(200).json({
-      numTransactions,
-      numSuccessfulTransactions,
-      totalAmountTransactions,
-      totalAmountSuccessfulTransactions,
+      ...result[0],
       growthPercentage,
     });
   } catch (error) {
-    console.error("Error calculating last 30 days stats:", error);
+    console.error("Error calculating last 30 days stats using aggregation:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -484,63 +391,83 @@ const DummymonthlyTransactionMetrics = async (req, res) => {
 const Dummysuccesslast6Months = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
-    if (merchant) {
-      transactions = await Transactiontable.find({
-        Status: "Success",
-        currency: currency,
-        merchant: merchant,
-      });
-    } else {
-      transactions = await Transactiontable.find({
-        Status: "Success",
-        currency: currency,
-      });
+    const currentDate = new Date(2024,3,17);
+    console.log(currentDate)
+    let startMonth = currentDate.getMonth() - 5;
+    let startYear = currentDate.getFullYear();
+    if (startMonth < 0) {
+      startMonth += 12;
+      startYear--;
     }
+    const endMonth = currentDate.getMonth() + 1;
+    const endYear = currentDate.getFullYear();
+    const pipeline = [
+      {
+        $addFields: {
+          transactionDate: {
+            $dateFromString: {
+              dateString: "$transactiondate",
+              format: "%d/%m/%Y %H:%M:%S"
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          Status: "Success",
+          currency: currency,
+          ...(merchant && { merchant: merchant }),
+          transactionDate: {
+            $gte: new Date(startYear, startMonth, 1, 0, 0, 0),
+            $lte: new Date(endYear, endMonth, 1, 23, 59, 59)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$transactionDate" },
+            year: { $year: "$transactionDate" }
+          },
+          totalAmount: { $sum: "$amount" },
+          numTransactions: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          month: "$_id.month",
+          year: "$_id.year",
+          totalAmount: 1,
+          numTransactions: 1
+        }
+      }
+    ];
+
+    const result = await Transactiontable.aggregate(pipeline);
+console.log(result)
     const salesByMonth = {};
     let totalSales = 0;
 
+    // Initialize salesByMonth with 0 values for all 6 months
     for (let i = 0; i < 6; i++) {
-      const currentDate = new Date(2024, 3, 17);
-      const startDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() - i,
-        1
-      );
-      const endDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() - i + 1,
-        0
-      );
-
-      const filteredTransactions = transactions.filter((transaction) => {
-        const transactionDate = new Date(
-          transaction.transactiondate.replace(
-            /(\d{2})\/(\d{2})\/(\d{4})/,
-            "$2/$1/$3"
-          )
-        );
-        return transactionDate >= startDate && transactionDate <= endDate;
-      });
-
-      let totalAmount = filteredTransactions.reduce(
-        (total, transaction) => total + transaction.amount,
-        0
-      );
-
-      totalAmount = parseFloat(totalAmount.toFixed(3));
-
-      salesByMonth[
-        startDate.toLocaleDateString("en-US", {
-          month: "long",
-          year: "numeric",
-        })
-      ] = totalAmount;
-      totalSales += totalAmount;
+      let month = startMonth + i;
+      let year = startYear;
+      if (month > 11) {
+        month -= 12;
+        year++;
+      }
+      salesByMonth[`${month + 1}/${year}`] = 0;
     }
+
+    result.forEach(({ month, year, totalAmount }) => {
+      salesByMonth[`${month}/${year}`] = totalAmount;
+      totalSales += totalAmount;
+    });
 
     res.json({ salesByMonth, totalSales });
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error fetching data using aggregation:", error);
     res.status(500).json({ error: "An error occurred while fetching data" });
   }
 };

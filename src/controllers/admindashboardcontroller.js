@@ -652,9 +652,6 @@ const Adminsuccesslast6Months = async (req, res) => {
     }
     const endMonth = currentDate.getMonth() + 1;
     const endYear = currentDate.getFullYear();
-console.table({startMonth,startYear,endMonth,endYear})
-console.log(new Date(startYear, startMonth,1))
-console.log( new Date(endYear, endMonth, 1))
     const pipeline = [
       {
         $addFields: {

@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     ref: "Client", // Reference to the Client model
   },
+  shortcuts: [
+  {
+      id: String,
+      shortcut: String,
+      edited_name: String
+}
+  ],
 });
 
 const User = mongoose.model("User", userSchema);
