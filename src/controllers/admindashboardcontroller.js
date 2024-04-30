@@ -137,7 +137,8 @@ const AdminweeklyStats = async (req, res) => {
       results.push({
         date: dayFormatted,
         successCount,
-        failedCount
+        failedCount,
+        incompleteCount
       });
       transactionCounts.push({
         date: dayFormatted,
