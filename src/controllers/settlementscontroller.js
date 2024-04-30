@@ -482,15 +482,13 @@ async function createSettlement(req, res) {
       usd_to_eur_exc_rate,
       note,
     } = req.body;
-console.log(fromDate);
-console.log(toDate);
-    var [year, month, day] = fromDate.substring(0, 10).split("-");
-    const formattedfromDate = `${day}/${month}/${year} 13:00:00`;
 
-    [year, month, day] = toDate.substring(0, 10).split("-");
-    const formattedtoDate = `${day}/${month}/${year} 15:00:00`;
+    const newfromDate = new Date(fromDate)
+    const newtoDate = new Date(toDate)
 
-    console.table({ formattedfromDate, formattedtoDate });
+  const formattedfromDate = `${("0" + newfromDate.getDate()).slice(-2)}/${("0" + (newfromDate.getMonth() + 1)).slice(-2)}/${newfromDate.getFullYear()} ${("0" + newfromDate.getHours()).slice(-2)}:${("0" + newfromDate.getMinutes()).slice(-2)}:${("0" + newfromDate.getSeconds()).slice(-2)}`;
+ 
+  const formattedtoDate = `${("0" + newtoDate.getDate()).slice(-2)}/${("0" + (newtoDate.getMonth() + 1)).slice(-2)}/${newtoDate.getFullYear()} ${("0" + newtoDate.getHours()).slice(-2)}:${("0" + newtoDate.getMinutes()).slice(-2)}:${("0" + newtoDate.getSeconds()).slice(-2)}`;
 
     const refund_count = parseFloat(eur_no_of_refund + usd_no_of_refund);
     console.log(refund_count);
@@ -603,11 +601,13 @@ console.log(toDate);
       client_id: client_data["client_id"],
       report_id,
       company_name,
-      fromDate: formattedfromDate.substring(0, 10),
-      toDate: formattedtoDate.substring(0, 10),
+      fromDate: formattedfromDate,
+      toDate: formattedtoDate,
       total_vol: app_vol,
       eur_app_count: app_count,
       eur_dec_count: dec_count,
+      usd_app_count,
+      usd_dec_count,
       MDR_amount,
       app_amount,
       dec_amount,
@@ -1103,13 +1103,12 @@ async function previewSettlement(req, res) {
       note,
     } = req.body;
 
-    console.log(fromDate);
-    console.log(toDate);
-    var [year, month, day] = fromDate.substring(0, 10).split("-");
-    const formattedfromDate = `${day}/${month}/${year} 15:15:00`;
+    const newfromDate = new Date(fromDate)
+    const newtoDate = new Date(toDate)
 
-    [year, month, day] = toDate.substring(0, 10).split("-");
-    const formattedtoDate = `${day}/${month}/${year} 16:15:00`;
+  const formattedfromDate = `${("0" + newfromDate.getDate()).slice(-2)}/${("0" + (newfromDate.getMonth() + 1)).slice(-2)}/${newfromDate.getFullYear()} ${("0" + newfromDate.getHours()).slice(-2)}:${("0" + newfromDate.getMinutes()).slice(-2)}:${("0" + newfromDate.getSeconds()).slice(-2)}`;
+ 
+  const formattedtoDate = `${("0" + newtoDate.getDate()).slice(-2)}/${("0" + (newtoDate.getMonth() + 1)).slice(-2)}/${newtoDate.getFullYear()} ${("0" + newtoDate.getHours()).slice(-2)}:${("0" + newtoDate.getMinutes()).slice(-2)}:${("0" + newtoDate.getSeconds()).slice(-2)}`;
 
     console.table({ formattedfromDate, formattedtoDate });
 
@@ -1222,11 +1221,13 @@ async function previewSettlement(req, res) {
     settlement_record = {
       client_id: client_data["client_id"],
       company_name,
-      fromDate: formattedfromDate.substring(0, 10),
-      toDate: formattedtoDate.substring(0, 10),
+      fromDate: formattedfromDate,
+      toDate: formattedtoDate,
       total_vol: app_vol,
       eur_app_count: app_count,
       eur_dec_count: dec_count,
+      usd_app_count,
+      usd_dec_count,
       MDR_amount,
       app_amount,
       dec_amount,
