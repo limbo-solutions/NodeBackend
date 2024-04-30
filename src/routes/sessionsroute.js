@@ -14,6 +14,6 @@ const router = express.Router();
 router.post("/login", login);
 router.put("/updateuser", verifyToken, updateUser);
 router.get("/userdetails", verifyToken, userDetails);
-router.post("/forgotpassword", verifyToken, sendOTPByEmail),
-  router.patch("/resetpassword", verifyToken, resetPassword),
+router.post("/forgotpassword", sendOTPByEmail),
+  router.patch("/resetpassword", resetPassword),
   (module.exports = router);

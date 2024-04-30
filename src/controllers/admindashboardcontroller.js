@@ -688,12 +688,6 @@ console.log( new Date(endYear, endMonth, 1))
         }
       },
       {
-        $sort: {
-          "_id.year": 1,
-          "_id.month": 1
-        }
-      },
-      {
         $project: {
           _id: 0,
           month: "$_id.month",
