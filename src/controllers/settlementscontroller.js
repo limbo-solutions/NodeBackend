@@ -596,7 +596,7 @@ async function createSettlement(req, res) {
       (settlementDate.getMonth() + 1)
     ).slice(-2)}/${settlementDate.getFullYear()}`;
 
-    const report_id = calculateReportID(client_data.client_id);
+    const report_id = await calculateReportID(client_data.client_id);
     settlement_record = {
       client_id: client_data["client_id"],
       report_id,
@@ -606,8 +606,6 @@ async function createSettlement(req, res) {
       total_vol: app_vol,
       eur_app_count: app_count,
       eur_dec_count: dec_count,
-      usd_app_count,
-      usd_dec_count,
       MDR_amount,
       app_amount,
       dec_amount,
