@@ -643,6 +643,7 @@ const Adminsuccesslast6Months = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
     const currentDate = new Date();
+    console.log(currentDate)
     let startMonth = currentDate.getMonth() - 5;
     let startYear = currentDate.getFullYear();
     if (startMonth < 0) {
@@ -652,8 +653,8 @@ const Adminsuccesslast6Months = async (req, res) => {
     const endMonth = currentDate.getMonth() + 1;
     const endYear = currentDate.getFullYear();
 console.table({startMonth,startYear,endMonth,endYear})
-console.log(new Date(startYear, startMonth, 1))
-console.log( new Date(endYear, endMonth, 0))
+console.log(new Date(startYear, startMonth,1))
+console.log( new Date(endYear, endMonth, 1))
     const pipeline = [
       {
         $addFields: {
@@ -671,8 +672,8 @@ console.log( new Date(endYear, endMonth, 0))
           currency: currency,
           ...(merchant && { merchant: merchant }),
           transactionDate: {
-            $gte: new Date(startYear, startMonth, 1),
-            $lte: new Date(endYear, endMonth, 0)
+            $gte: new Date(startYear, startMonth, 1, 0, 0, 0),
+            $lte: new Date(endYear, endMonth, 1, 23, 59, 59)
           }
         }
       },
