@@ -643,6 +643,17 @@ const Adminsuccesslast6Months = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
     const currentDate = new Date();
+    let startMonth = currentDate.getMonth() - 5;
+    let startYear = currentDate.getFullYear();
+    if (startMonth < 0) {
+      startMonth += 12;
+      startYear--;
+    }
+    const endMonth = currentDate.getMonth() + 1;
+    const endYear = currentDate.getFullYear();
+console.table({startMonth,startYear,endMonth,endYear})
+console.log(new Date(startYear, startMonth, 1))
+console.log( new Date(endYear, endMonth, 0))
     const pipeline = [
       {
         $addFields: {
@@ -660,8 +671,8 @@ const Adminsuccesslast6Months = async (req, res) => {
           currency: currency,
           ...(merchant && { merchant: merchant }),
           transactionDate: {
-            $gte: new Date(currentDate.getFullYear(), currentDate.getMonth() - 5, 1),
-            $lte: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+            $gte: new Date(startYear, startMonth, 1),
+            $lte: new Date(endYear, endMonth, 0)
           }
         }
       },
@@ -677,12 +688,9 @@ const Adminsuccesslast6Months = async (req, res) => {
       },
       {
         $sort: {
-          "_id.year": -1,
-          "_id.month": -1
+          "_id.year": 1,
+          "_id.month": 1
         }
-      },
-      {
-        $limit: 6
       },
       {
         $project: {
@@ -696,16 +704,23 @@ const Adminsuccesslast6Months = async (req, res) => {
     ];
 
     const result = await LiveTransactionTable.aggregate(pipeline);
-
+console.log(result)
     const salesByMonth = {};
     let totalSales = 0;
 
+    // Initialize salesByMonth with 0 values for all 6 months
+    for (let i = 0; i < 6; i++) {
+      let month = startMonth + i;
+      let year = startYear;
+      if (month > 11) {
+        month -= 12;
+        year++;
+      }
+      salesByMonth[`${month + 1}/${year}`] = 0;
+    }
+
     result.forEach(({ month, year, totalAmount }) => {
-      const monthName = new Date(year, month - 1).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric"
-      });
-      salesByMonth[monthName] = totalAmount;
+      salesByMonth[`${month}/${year}`] = totalAmount;
       totalSales += totalAmount;
     });
 
