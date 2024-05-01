@@ -124,12 +124,7 @@ async function createSettlement(req, res) {
       settlement_vol,
     ]);
 
-    const settlementDate = new Date();
-
-    formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(-2)}/${(
-      "0" +
-      (settlementDate.getMonth() + 1)
-    ).slice(-2)}/${settlementDate.getFullYear()}`;
+    const settlementDate = new Date().toISOString().split("T")[0];
 
     const report_id = await calculateReportID(client_data.client_id);
     settlement_record = {
@@ -156,7 +151,7 @@ async function createSettlement(req, res) {
       usd_chargeback_amount,
       total_refund_amount,
       total_chargeback_amount,
-      date_settled: formattedSettlementDate,
+      date_settled: settlementDate,
       settlement_vol,
       note,
     };
@@ -171,7 +166,7 @@ async function createSettlement(req, res) {
     });
     await Client.updateOne(
       { company_name: company_name },
-      { last_settled_date: formattedSettlementDate }
+      { last_settled_date: settlementDate }
     );
   } catch (error) {
     console.error(error);
@@ -298,12 +293,7 @@ console.log(toDate)
       settlement_vol,
     ]);
 
-    const settlementDate = new Date();
-
-    formattedSettlementDate = `${("0" + settlementDate.getDate()).slice(-2)}/${(
-      "0" +
-      (settlementDate.getMonth() + 1)
-    ).slice(-2)}/${settlementDate.getFullYear()}`;
+    const settlementDate = new Date().toISOString().split("T")[0];
 
     settlement_record = {
       client_id: client_data["client_id"],
@@ -330,7 +320,7 @@ console.log(toDate)
       usd_chargeback_amount,
       total_refund_amount,
       total_chargeback_amount,
-      date_settled: formattedSettlementDate,
+      date_settled: settlementDate,
       settlement_vol,
       note,
     };

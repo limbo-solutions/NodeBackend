@@ -4,13 +4,14 @@ const LiveTransactionTable = require("../models/LiveTransactionTable");
 const AdminsuccessPercentageToday = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
+    console.log("In today stats")
     const currentDate = new Date();
     console.log(currentDate)
 
     const fromDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0).toISOString();
     const toDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59).toISOString();
-console.log(fromDate);
-console.log(toDate)
+    console.log(fromDate);
+    console.log(toDate)
 
     const query = {
       transactiondate: { $gte: fromDate, $lte: toDate },
@@ -35,7 +36,7 @@ console.log(toDate)
     ];
 
     const resultsForDay = await LiveTransactionTable.aggregate(aggregationPipeline);
-console.log(resultsForDay)
+    console.log(resultsForDay)
     const successResult = resultsForDay.find(result => result._id === "Success") || { count: 0, totalAmount: 0 };
     const failedResult = resultsForDay.find(result => result._id === "Failed") || { count: 0 };
     const incompleteResult = resultsForDay.find(result => result._id === "Incompleted") || { count: 0 };
