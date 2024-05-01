@@ -53,7 +53,7 @@ async function getLivedata(req, res) {
       merchant_fee: item.merchant_fee,
       backUrl: item.backUrl,
       merchant_id: item.merchant_id,
-      transactiondate: formatDateTime(item.transaction_date),
+      transactiondate: item.transaction_date,
       statusBKP: item.statusBKP,
       Status: item.status,
       isSettled: item.isSettled,
