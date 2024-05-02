@@ -92,12 +92,12 @@ const AdminweeklyStats = async (req, res) => {
 
   const fromDate = `${dayDate.getFullYear()}-${(
     "0" +
-    (currentDate.getMonth() + 1)
-  ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 00:00:00`;
+    (dayDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 00:00:00`;
   const toDate = `${dayDate.getFullYear()}-${(
     "0" +
-    (currentDate.getMonth() + 1)
-  ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
+    (dayDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 23:59:59`;
 console.log(fromDate)
 console.log(toDate)
 
