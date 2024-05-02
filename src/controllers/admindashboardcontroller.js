@@ -90,8 +90,14 @@ const AdminweeklyStats = async (req, res) => {
     for (let i = 0; i < 7; i++) {
   const dayDate = new Date(currentDate.getTime() - i * oneDayMilliseconds);
 
-  const fromDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0).toISOString();
-  const toDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59).toISOString();
+  const fromDate = `${dayDate.getFullYear()}-${(
+    "0" +
+    (currentDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 00:00:00`;
+  const toDate = `${dayDate.getFullYear()}-${(
+    "0" +
+    (currentDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
 console.log(fromDate)
 console.log(toDate)
 
@@ -150,10 +156,17 @@ console.log(toDate)
     const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
     const previousweekendDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const fromDate = new Date(previousweekstartDate.getFullYear(), previousweekstartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0).toISOString();
-  const toDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59).toISOString();
+    const fromDate = `${previousweekstartDate.getFullYear()}-${(
+      "0" +
+      (previousweekstartDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + previousweekstartDate.getDate()).slice(-2)} 00:00:00`;
+  const toDate = `${previousweekendDate.getFullYear()}-${(
+    "0" +
+    (previousweekendDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
 console.log("previous", fromDate.toLocaleString());
 console.log(toDate)
+
   const query = {
     transactiondate: { $gte: fromDate, $lte: toDate },
     Status: "Success",
