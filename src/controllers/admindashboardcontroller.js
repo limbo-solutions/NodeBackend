@@ -226,16 +226,28 @@ const AdminweeklyCardComparison = async (req, res) => {
     const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
     const previousweekendDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const formattedCurrentWeekStartDate = new Date(currentWeekStartDate.getFullYear(), currentWeekStartDate.getMonth(), currentWeekStartDate.getDate(), 0, 0, 0).toISOString();
+    const formattedCurrentWeekStartDate = `${currentWeekStartDate.getFullYear()}-${(
+      "0" +
+      (currentWeekStartDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentWeekStartDate.getDate()).slice(-2)} 00:00:00`;
     
-    const formattedCurrentWeekEndDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59).toISOString();
+    const formattedCurrentWeekEndDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
 
     console.log(formattedCurrentWeekStartDate)
     console.log(formattedCurrentWeekEndDate)
 
-    const formattedPreviousWeekStartDate = new Date(currentWeekStartDate.getFullYear(), currentWeekStartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0).toISOString();
+    const formattedPreviousWeekStartDate = `${previousweekstartDate.getFullYear()}-${(
+      "0" +
+      (previousweekstartDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + previousweekstartDate.getDate()).slice(-2)} 00:00:00`;
 
-    const formattedPreviousWeekEndDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59).toISOString();
+    const formattedPreviousWeekEndDate = `${previousweekendDate.getFullYear()}-${(
+      "0" +
+      (previousweekendDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
 
     console.log(formattedPreviousWeekStartDate)
     console.log(formattedPreviousWeekEndDate)
@@ -309,9 +321,15 @@ const AdminweeklyTop4Countries = async (req, res) => {
     const currentDate = new Date();
     const currentWeekStartDate = new Date(currentDate.getTime() - 6 * 24 * 60 * 60 * 1000);
 
-    const formattedCurrentWeekStartDate = new Date(currentWeekStartDate.getFullYear(), currentWeekStartDate.getMonth(), currentWeekStartDate.getDate(), 0, 0, 0).toISOString();
+    const formattedCurrentWeekStartDate = `${currentWeekStartDate.getFullYear()}-${(
+      "0" +
+      (currentWeekStartDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentWeekStartDate.getDate()).slice(-2)} 00:00:00`;
     
-    const formattedCurrentWeekEndDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59).toISOString();
+    const formattedCurrentWeekEndDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
 
     console.log(formattedCurrentWeekStartDate)
     console.log(formattedCurrentWeekEndDate)
@@ -366,11 +384,18 @@ if (thirtyDaysAgo.getMonth() === 11 && currentDate.getMonth() === 0) {
   thirtyDaysAgo.setFullYear(currentDate.getFullYear() - 1);
 }
 
-    let formattedFromDate = new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate(), 0, 0, 0).toISOString();
+    let formattedFromDate = `${thirtyDaysAgo.getFullYear()}-${(
+      "0" +
+      (thirtyDaysAgo.getMonth() + 1)
+    ).slice(-2)}-${("0" + thirtyDaysAgo.getDate()).slice(-2)} 00:00:00`;
+    
+    let formattedToDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
 
-    let formattedToDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59).toISOString();
-console.log(formattedFromDate)
-console.log(formattedToDate)
+    console.log(formattedFromDate)
+    console.log(formattedToDate)
 
 let pipeline = [
     {
@@ -413,9 +438,15 @@ let pipeline = [
   }
   console.log(sixtyDaysAgo)
     
-  formattedFromDate = new Date(sixtyDaysAgo.getFullYear(), sixtyDaysAgo.getMonth(), sixtyDaysAgo.getDate(), 0, 0, 0).toISOString();
+  formattedFromDate = `${sixtyDaysAgo.getFullYear()}-${(
+    "0" +
+    (sixtyDaysAgo.getMonth() + 1)
+  ).slice(-2)}-${("0" + sixtyDaysAgo.getDate()).slice(-2)} 00:00:00`;
 
-  formattedToDate = new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate(), 23, 59, 59).toISOString();
+  formattedToDate = `${thirtyDaysAgo.getFullYear()}-${(
+    "0" +
+    (thirtyDaysAgo.getMonth() + 1)
+  ).slice(-2)}-${("0" + thirtyDaysAgo.getDate()).slice(-2)} 23:59:59`;
 console.log(formattedFromDate)
 console.log(formattedToDate)
 pipeline = [
