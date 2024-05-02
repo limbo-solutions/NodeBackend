@@ -605,8 +605,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: "annagarciagalleria@gmail.com",
-    pass: "meeg jhhs pafp apmo",
+    user: "no.reply.centpays@gmail.com",
+    pass: "hkbm gogq vyni fzfy",
   },
 });
 
@@ -618,10 +618,16 @@ async function sendEmail(req, res) {
     console.table([fromEmail, toEmail, subject, message, attachment]);
 
     const mailOptions = {
-      from: fromEmail,
+      from: "no.reply.centpays@gmail.com",
       to: toEmail,
-      subject: subject,
-      text: message,
+      subject: "Your OTP for Email Verification",
+      text: `DBody - 
+
+      Hello,
+      
+      Your one-time passcode (OTP) from Centpays is:  ${otp}.
+      
+      Please either Copy and Paste or enter the code manually when prompted. The code was requested and will be valid for 10 minutes.`,
       attachments: attachment
         ? [
             {
