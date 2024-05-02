@@ -14,7 +14,7 @@ const AdminsuccessPercentageToday = async (req, res) => {
     console.log(toDate)
 
     const query = {
-      transactiondate: { $gte: fromDate, $lte: toDate },
+      transactiondate: { $gte: "2024-05-01 00:00:00", $lte:  "2024-05-01 23:59:59" },
       currency: currency,
     };
 
@@ -46,15 +46,18 @@ const AdminsuccessPercentageToday = async (req, res) => {
     const incompleteCount = incompleteResult.count;
 
     const successAmount = successResult.totalAmount;
-
+    console.log("successAmount ", successAmount)
+ 
     const totalTransactions = successCount + failedCount + incompleteCount;
+    console.log("successAmount ", successAmount)
 
     const successPercentage = totalTransactions === 0 ? 0 : (successCount / totalTransactions) * 100;
+    console.log("successAmount ", successAmount)
 
     res.status(200).json({
-      successPercentage: 12,
-      successAmount: 34,
-      totalTransactions: 56,
+      successPercentage: successPercentage.toFixed(2),
+      successAmount: successAmount.toFixed(3),
+      totalTransactions,
     });
   } catch (error) {
     console.error("Error:", error);
