@@ -8,13 +8,21 @@ const AdminsuccessPercentageToday = async (req, res) => {
     const currentDate = new Date();
     console.log(currentDate)
 
-    const fromDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0).toISOString();
-    const toDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59).toISOString();
+    const fromDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 00:00:00`;
+
+    const toDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
+
     console.log(fromDate);
-    console.log(toDate)
+    console.log(toDate);
 
     const query = {
-      transactiondate: { $gte: "2024-05-01 00:00:00", $lte:  "2024-05-01 23:59:59" },
+      transactiondate: { $gte: fromDate, $lte:  toDate},
       currency: currency,
     };
 
