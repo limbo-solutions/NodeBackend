@@ -52,9 +52,9 @@ const AdminsuccessPercentageToday = async (req, res) => {
     const successPercentage = totalTransactions === 0 ? 0 : (successCount / totalTransactions) * 100;
 
     res.status(200).json({
-      successPercentage: successPercentage.toFixed(2),
-      successAmount: successAmount.toFixed(3),
-      totalTransactions,
+      successPercentage: 12,
+      successAmount: 34,
+      totalTransactions: 56,
     });
   } catch (error) {
     console.error("Error:", error);
