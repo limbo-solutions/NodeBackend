@@ -4,8 +4,8 @@ const Transactiontable = require("../models/Transactiontable");
 const DummysuccessPercentageToday = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
-    const fromDate = "17/04/2024 00:00:00";
-    const toDate = "17/04/2024 23:59:59";
+    const fromDate = "2024-04-17 00:00:00";
+    const toDate = "2024-04-17 23:59:59";
 
     const query = {
       transactiondate: { $gte: fromDate, $lte: toDate },
@@ -79,8 +79,8 @@ const DummyweeklyStats = async (req, res) => {
   const fromDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0);
   const toDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59);
 
-  const formattedFromDate = `${("0" + fromDate.getDate()).slice(-2)}/${("0" + (fromDate.getMonth() + 1)).slice(-2)}/${fromDate.getFullYear()} 00:00:00`;
-  const formattedToDate = `${("0" + toDate.getDate()).slice(-2)}/${("0" + (toDate.getMonth() + 1)).slice(-2)}/${toDate.getFullYear()} 23:59:59`;
+  const formattedFromDate = `${fromDate.getFullYear()}-${("0" + (fromDate.getMonth() + 1)).slice(-2)}-${("0" + fromDate.getDate()).slice(-2)}  00:00:00`;
+  const formattedToDate = `${toDate.getFullYear()}-${("0" + (toDate.getMonth() + 1)).slice(-2)}-${("0" + toDate.getDate()).slice(-2)} 23:59:59`;
 
       const query = {
         transactiondate: { $gte: formattedFromDate, $lte: formattedToDate },
@@ -148,20 +148,19 @@ const DummyweeklyStats = async (req, res) => {
   //   const fromDate = new Date(previousweekstartDate.getFullYear(), previousweekstartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0).toISOString();
   // const toDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59).toISOString();
 
-  // const query = {
-  //   transactiondate: { $gte: fromDate, $lte: toDate },
-  //   Status: "Success",
-  //   currency: currency
-  // };
+ 
 
-  const fromDate = new Date(previousweekstartDate.getFullYear(), previousweekstartDate.getMonth(), previousweekstartDate.getDate(), 0, 0, 0);
-  const toDate = new Date(previousweekendDate.getFullYear(), previousweekendDate.getMonth(), previousweekendDate.getDate(), 23, 59, 59);
-
-  const formattedFromDate = `${("0" + fromDate.getDate()).slice(-2)}/${("0" + (fromDate.getMonth() + 1)).slice(-2)}/${fromDate.getFullYear()} 00:00:00`;
-  const formattedToDate = `${("0" + toDate.getDate()).slice(-2)}/${("0" + (toDate.getMonth() + 1)).slice(-2)}/${toDate.getFullYear()} 23:59:59`;
+  const fromDate = `${previousweekstartDate.getFullYear()}-${(
+    "0" +
+    (previousweekstartDate.getMonth() + 1)
+  ).slice(-2)}-${("0" + previousweekstartDate.getDate()).slice(-2)} 00:00:00`;
+const toDate = `${previousweekendDate.getFullYear()}-${(
+  "0" +
+  (previousweekendDate.getMonth() + 1)
+).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
 
   const query = {
-    transactiondate: { $gte: formattedFromDate, $lte: formattedToDate },
+    transactiondate: { $gte: fromDate, $lte: toDate },
     Status: "Success",
     currency: currency
   };
@@ -214,7 +213,7 @@ const DummyweeklyCardComparison = async (req, res) => {
   const { currency, merchant } = req.query;
   try {
     query = {
-      transactiondate: { $gte: "10/04/2024 00:00:00", $lte: "17/04/2024 23:59:59" },
+      transactiondate: { $gte: "2024-04-10 00:00:00", $lte: "2024-04-17 23:59:59" },
       currency: currency
     };
     if (merchant) {
@@ -238,7 +237,7 @@ const DummyweeklyCardComparison = async (req, res) => {
     const currentWeekMastercardAmount = CurrentmastercardResult ? CurrentmastercardResult.totalAmount : 0;
 
     queryPrevious = {
-      transactiondate: { $gte: "03/04/2024 00:00:00", $lte: "10/04/2024 23:59:59"},
+      transactiondate: { $gte: "2024-04-03 00:00:00", $lte: "2024-04-10 23:59:59"},
       currency: currency
     };
     if (merchant) {
@@ -282,8 +281,8 @@ const DummyweeklyTop4Countries = async (req, res) => {
       {
         $match: {
           transactiondate: {
-            $gte: "10/04/2024 00:00:00" ,
-            $lte: "17/04/2024 23:59:59",
+            $gte: "2024-04-20 00:00:00" ,
+            $lte: "2024-04-17 23:59:59",
           },
           currency: currency,
           merchant: merchant || { $exists: true }, 
@@ -324,8 +323,8 @@ const DummymonthlyTransactionMetrics = async (req, res) => {
       {
         $match: {
           transactiondate: {
-            $gte: "17/03/2024 00:00:00",
-            $lte: "17/04/2024 23:59:59",
+            $gte: "2024-03-17 00:00:00",
+            $lte: "2024-04-17 23:59:59",
           },
           currency: currency,
           ...(merchant && { merchant: merchant }),
@@ -355,8 +354,8 @@ const DummymonthlyTransactionMetrics = async (req, res) => {
         {
           $match: {
             transactiondate: {
-              $gte: "17/02/2024 00:00:00",
-              $lte: "17/03/2024 23:59:59",
+              $gte: "2024-02-17 00:00:00",
+              $lte: "2024-03-17 23:59:59",
             },
             currency: currency,
             ...(merchant && { merchant: merchant }),
@@ -407,7 +406,7 @@ const Dummysuccesslast6Months = async (req, res) => {
           transactionDate: {
             $dateFromString: {
               dateString: "$transactiondate",
-              format: "%d/%m/%Y %H:%M:%S"
+              format: "%Y-%m-%d %H:%M:%S"
             }
           }
         }

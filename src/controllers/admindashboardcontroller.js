@@ -160,7 +160,8 @@ console.log(toDate)
       "0" +
       (previousweekstartDate.getMonth() + 1)
     ).slice(-2)}-${("0" + previousweekstartDate.getDate()).slice(-2)} 00:00:00`;
-  const toDate = `${previousweekendDate.getFullYear()}-${(
+  
+    const toDate = `${previousweekendDate.getFullYear()}-${(
     "0" +
     (previousweekendDate.getMonth() + 1)
   ).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
