@@ -42,45 +42,79 @@ async function createSettlement(req, res) {
 
     const all_txn_of_company = await LiveTransactionTable.aggregate([
       {
-        $match: {
-          merchant: company_name,
-          transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
+          $match: {
+              merchant: company_name,
+              transactiondate: {
+                  $gte: fromDate,
+                  $lte: toDate,
+              },
           },
-        },
       },
       {
-        $group: {
-          _id: "$Status", // Group by the currency field
-          totalTransactions: { $sum: 1 }, // Count total transactions for each currency
-          totalAmount: { $sum: "$amount" }, // Calculate total amount for each currency
-          // Add more operations as needed
-        },
+          $group: {
+              _id: { currency: "$currency", status: "$Status" },
+              totalTransactions: { $sum: 1 },
+              totalAmount: { $sum: "$amount" },
+          },
       },
-    ]);
+      {
+          $group: {
+              _id: "$_id.currency",
+              statuses: {
+                  $push: {
+                      status: "$_id.status",
+                      totalTransactions: "$totalTransactions",
+                      totalAmount: "$totalAmount"
+                  }
+              }
+          }
+      }
+  ]);
 
     console.log(all_txn_of_company);
 
-    all_txn_of_company.forEach((statusGroup) => {
-      const status = statusGroup._id;
-      const totalTransactions = statusGroup.totalTransactions;
-      const totalAmount = statusGroup.totalAmount;
+    let app_count = 0;
+    let app_vol = 0;
+    let dec_count = 0;
+    let dec_vol = 0;
+    let usd_app_count = 0;
+    let usd_dec_count = 0;
+    let eur_app_count = 0;
+    let eur_dec_count = 0;
 
-      if (status === "Success") {
-        app_count = totalTransactions;
-        app_vol = totalAmount;
-      } else if (status === "Failed") {
-        dec_count = totalTransactions;
-        dec_vol = totalAmount;
-      }
+    all_txn_of_company.forEach((currencyGroup) => {
+      const status = currencyGroup.statuses;
+      const currency = currencyGroup._id;
 
-      console.log(
-        `Status: ${status}, Total Transactions: ${totalTransactions}, Total Amount: ${totalAmount}`
-      );
-    });
+      status.forEach((statusGroup) => {
+          const { totalTransactions, totalAmount } = statusGroup;
 
-    console.table({ app_count, dec_count, app_vol, dec_vol });
+          if (currency === "USD") {
+              if (statusGroup.status === "Success") {
+                  usd_app_count += totalTransactions;
+                  app_vol += totalAmount;
+              } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+                  usd_dec_count += totalTransactions;
+                  dec_vol += totalAmount;
+              }
+          } else if (currency === "EUR") {
+              if (statusGroup.status === "Success") {
+                  eur_app_count += totalTransactions;
+                  app_vol += totalAmount;
+              } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+                  eur_dec_count += totalTransactions;
+                  dec_vol += totalAmount;
+              }
+          }
+
+          console.log(`Currency: ${currency}, Status: ${statusGroup.status}, Total Transactions: ${totalTransactions}, Total Amount: ${totalAmount}`);
+      });
+  });
+
+  app_count = eur_app_count + usd_app_count;
+  dec_count = eur_dec_count + usd_dec_count;
+
+  console.table({ app_count, dec_count, app_vol, dec_vol, usd_app_count, usd_dec_count, eur_app_count, eur_dec_count });
 
     const MDR_amount = parseFloat((app_vol * (rates.MDR / 100)).toFixed(3));
     const app_amount = parseFloat((app_count * rates.txn_app).toFixed(3));
@@ -134,8 +168,10 @@ async function createSettlement(req, res) {
       fromDate,
       toDate,
       total_vol: app_vol,
-      eur_app_count: app_count,
-      eur_dec_count: dec_count,
+      eur_app_count,
+      eur_dec_count,
+      usd_app_count,
+      usd_dec_count,
       MDR_amount,
       app_amount,
       dec_amount,
@@ -212,44 +248,79 @@ console.log(toDate)
 
     const all_txn_of_company = await LiveTransactionTable.aggregate([
       {
-        $match: {
-          merchant: company_name,
-          transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
+          $match: {
+              merchant: company_name,
+              transactiondate: {
+                  $gte: fromDate,
+                  $lte: toDate,
+              },
           },
-        },
       },
       {
-        $group: {
-          _id: "$Status", 
-          totalTransactions: { $sum: 1 }, 
-          totalAmount: { $sum: "$amount" }, 
-        },
+          $group: {
+              _id: { currency: "$currency", status: "$Status" },
+              totalTransactions: { $sum: 1 },
+              totalAmount: { $sum: "$amount" },
+          },
       },
-    ]);
+      {
+          $group: {
+              _id: "$_id.currency",
+              statuses: {
+                  $push: {
+                      status: "$_id.status",
+                      totalTransactions: "$totalTransactions",
+                      totalAmount: "$totalAmount"
+                  }
+              }
+          }
+      }
+  ]);
 
     console.log(all_txn_of_company);
 
-    all_txn_of_company.forEach((statusGroup) => {
-      const status = statusGroup._id;
-      const totalTransactions = statusGroup.totalTransactions;
-      const totalAmount = statusGroup.totalAmount;
+    let app_count = 0;
+    let app_vol = 0;
+    let dec_count = 0;
+    let dec_vol = 0;
+    let usd_app_count = 0;
+    let usd_dec_count = 0;
+    let eur_app_count = 0;
+    let eur_dec_count = 0;
 
-      if (status === "Success") {
-        app_count = totalTransactions;
-        app_vol = totalAmount;
-      } else if (status === "Failed") {
-        dec_count = totalTransactions;
-        dec_vol = totalAmount;
-      }
+    all_txn_of_company.forEach((currencyGroup) => {
+      const status = currencyGroup.statuses;
+      const currency = currencyGroup._id;
 
-      console.log(
-        `Status: ${status}, Total Transactions: ${totalTransactions}, Total Amount: ${totalAmount}`
-      );
-    });
+      status.forEach((statusGroup) => {
+          const { totalTransactions, totalAmount } = statusGroup;
 
-    console.table({ app_count, dec_count, app_vol, dec_vol });
+          if (currency === "USD") {
+              if (statusGroup.status === "Success") {
+                  usd_app_count += totalTransactions;
+                  app_vol += totalAmount;
+              } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+                  usd_dec_count += totalTransactions;
+                  dec_vol += totalAmount;
+              }
+          } else if (currency === "EUR") {
+              if (statusGroup.status === "Success") {
+                  eur_app_count += totalTransactions;
+                  app_vol += totalAmount;
+              } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+                  eur_dec_count += totalTransactions;
+                  dec_vol += totalAmount;
+              }
+          }
+
+          console.log(`Currency: ${currency}, Status: ${statusGroup.status}, Total Transactions: ${totalTransactions}, Total Amount: ${totalAmount}`);
+      });
+  });
+
+  app_count = eur_app_count + usd_app_count;
+  dec_count = eur_dec_count + usd_dec_count;
+
+  console.table({ app_count, dec_count, app_vol, dec_vol, usd_app_count, usd_dec_count, eur_app_count, eur_dec_count });
 
     const MDR_amount = parseFloat((app_vol * (rates.MDR / 100)).toFixed(3));
     const app_amount = parseFloat((app_count * rates.txn_app).toFixed(3));
@@ -301,10 +372,10 @@ console.log(toDate)
       fromDate,
       toDate,
       total_vol: app_vol,
-      eur_app_count: app_count,
-      eur_dec_count: dec_count,
-      // usd_app_count,
-      // usd_dec_count,
+      eur_app_count,
+      eur_dec_count,
+      usd_app_count,
+      usd_dec_count,
       MDR_amount,
       app_amount,
       dec_amount,
