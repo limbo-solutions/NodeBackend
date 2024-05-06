@@ -25,6 +25,8 @@ async function createSettlement(req, res) {
       note,
     } = req.body;
 
+    fromDate.replace("T"," ");
+    toDate.replace("T"," ")
     const refund_count = parseFloat(eur_no_of_refund + usd_no_of_refund);
     console.log(refund_count);
     const chargeback_count = parseFloat(
@@ -45,8 +47,8 @@ async function createSettlement(req, res) {
           $match: {
               merchant: company_name,
               transactiondate: {
-                  $gte: fromDate.replace("T"," "),
-                  $lte: toDate.replace("T"," "),
+                  $gte: fromDate,
+                  $lte: toDate,
               },
           },
       },
@@ -228,9 +230,13 @@ async function previewSettlement(req, res) {
       usd_to_eur_exc_rate,
       note,
     } = req.body;
+
+
+fromDate.replace("T"," ")
+toDate.replace("T"," ")
+
 console.log(fromDate)
 console.log(toDate)
-
     const refund_count = parseFloat(eur_no_of_refund + usd_no_of_refund);
     console.log(refund_count);
     const chargeback_count = parseFloat(
@@ -251,8 +257,8 @@ console.log(toDate)
           $match: {
               merchant: company_name,
               transactiondate: {
-                  $gte: fromDate.replace("T"," "),
-                  $lte: toDate.replace("T"," "),
+                  $gte: fromDate,
+                  $lte: toDate,
               },
           },
       },
