@@ -45,8 +45,8 @@ async function createSettlement(req, res) {
           $match: {
               merchant: company_name,
               transactiondate: {
-                  $gte: fromDate,
-                  $lte: toDate,
+                  $gte: fromDate.replace("T"," "),
+                  $lte: toDate.replace("T"," "),
               },
           },
       },
@@ -251,8 +251,8 @@ console.log(toDate)
           $match: {
               merchant: company_name,
               transactiondate: {
-                  $gte: fromDate,
-                  $lte: toDate,
+                  $gte: fromDate.replace("T"," "),
+                  $lte: toDate.replace("T"," "),
               },
           },
       },

@@ -281,8 +281,8 @@ const DummyweeklyTop4Countries = async (req, res) => {
       {
         $match: {
           transactiondate: {
-            $gte: "2024-04-20 00:00:00" ,
-            $lte: "2024-04-17 23:59:59",
+            $gte: "2024-04-17 00:00:00" ,
+            $lte: "2024-04-20 23:59:59",
           },
           currency: currency,
           merchant: merchant || { $exists: true }, 

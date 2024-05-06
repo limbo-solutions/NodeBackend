@@ -305,6 +305,9 @@ const AdminweeklyCardComparison = async (req, res) => {
     const visaDifference = parseFloat(
       (currentWeekVisaAmount - PreviousWeekVisaAmount).toFixed(3)
     );
+    console.log(currentWeekVisaAmount);
+    console.log(PreviousWeekVisaAmount)
+    console.log(visaDifference)
     const mastercardDifference = parseFloat(
       (currentWeekMastercardAmount - PreviousWeekMastercardAmount).toFixed(3)
     );
