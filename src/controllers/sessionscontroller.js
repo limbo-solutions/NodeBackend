@@ -109,16 +109,22 @@ const sendOTPByEmail = async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: "annagarciagalleria@gmail.com",
-        pass: "meeg jhhs pafp apmo",
+        user: "no.reply.centpays@gmail.com",
+        pass: "hkbm gogq vyni fzfy",
       },
     });
 
     const mailOptions = {
-      from: "annagarciagalleria@gmail.com",
+      from: "no.reply.centpays@gmail.com",
       to: email,
-      subject: "Your OTP from CentPays",
-      text: `Dear User, your OTP for verification to reset your password is: ${otp}`,
+      subject: "Your OTP for Email Verification",
+      text:`DBody - 
+
+      Hello,
+      
+      Your one-time passcode (OTP) from Centpays is:  ${otp}.
+      
+      Please either Copy and Paste or enter the code manually when prompted. The code was requested and will be valid for 10 minutes.`,
     };
 
     const info = await transporter.sendMail(mailOptions);

@@ -699,14 +699,8 @@ async function sendEmail(req, res) {
     const mailOptions = {
       from: "no.reply.centpays@gmail.com",
       to: toEmail,
-      subject: "Your OTP for Email Verification",
-      text: `DBody - 
-
-      Hello,
-      
-      Your one-time passcode (OTP) from Centpays is:  ${otp}.
-      
-      Please either Copy and Paste or enter the code manually when prompted. The code was requested and will be valid for 10 minutes.`,
+      subject: subject,
+      text: message,
       attachments: attachment
         ? [
             {
