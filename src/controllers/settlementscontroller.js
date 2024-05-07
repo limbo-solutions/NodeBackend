@@ -689,6 +689,7 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendEmail(req, res) {
+  console.log("entered")
   const { fromEmail, toEmail, subject, message } = req.body;
   const attachment = req.file;
   console.log(req.file);

@@ -134,40 +134,16 @@ async function userShortcut(req, res) {
       return res.status(400).json({ message: "No shortcuts provided" });
     }
 
-    const updatedShortcuts = shortcutsData.map(({ id, shortcut, edited_name }) => ({
-      id: id,
-      shortcut: shortcut,
-      edited_name: edited_name
-    }));
+    const existingShortcuts = user.shortcuts || [];
+    shortcutsData.forEach(({ id, shortcut, edited_name }) => {
+      existingShortcuts.push({ id, shortcut, edited_name });
+    });
 
-    user.shortcuts = updatedShortcuts;
+    user.shortcuts = existingShortcuts;
 
     await user.save();
 
-    res.status(200).json({ message: "Shortcuts saved successfully", shortcuts: updatedShortcuts });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-async function getUserShortcuts(req, res) {
-  try {
-    const userRole = req.user.role;
-
-    const user = await User.findOne({ role: userRole });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const shortcuts = user.shortcuts.map(({ id, shortcut, edited_name }) => ({
-      id,
-      shortcut,
-      edited_name
-    }));
-
-    res.status(200).json({ shortcuts });
+    res.status(200).json({ message: "Shortcuts saved successfully", shortcuts: existingShortcuts });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
