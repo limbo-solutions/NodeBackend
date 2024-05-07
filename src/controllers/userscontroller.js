@@ -150,6 +150,29 @@ async function userShortcut(req, res) {
   }
 }
 
+async function getUserShortcuts(req, res) {
+  try {
+    const userRole = req.user.role;
+
+    const user = await User.findOne({ role: userRole });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const shortcuts = user.shortcuts.map(({ id, shortcut, edited_name }) => ({
+      id,
+      shortcut,
+      edited_name
+    }));
+
+    res.status(200).json({ shortcuts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 async function deleteUserShortcuts(req, res) {
   try {
     const { id } = req.query;
