@@ -2,11 +2,12 @@ const express = require("express");
 const { verifyToken } = require("../middlewares/verifyToken");
 
 const {
-  getLivedata,
+  getLivedata, 
 } = require("../controllers/livetransactiontablecontroller");
 
 const router = express.Router();
 
 router.get("/getlivedata", getLivedata);
+
 
 module.exports = router;

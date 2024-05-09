@@ -13,6 +13,7 @@ const {
   getCurrenciesOfCompany,
   sendEmail,
   getCounts,
+  deleteSettlement
 } = require("../controllers/settlementscontroller");
 
 const router = express.Router();
@@ -32,5 +33,6 @@ router.get("/companylist", verifyToken, getCompanyList);
 router.get("/currenciesforcompany", verifyToken, getCurrenciesOfCompany);
 router.post("/sendemail", upload.single("attachment"), verifyToken, sendEmail);
 router.get("/settlements/counts", verifyToken, getCounts);
+router.delete("/deletesettlementrecord", verifyToken, deleteSettlement);
 
 module.exports = router;

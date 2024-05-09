@@ -112,6 +112,6 @@ async function getLivedata(req, res) {
 }
 
 const interval = 60000; // 1 min interval
-setInterval(getLivedata, interval);
+// setInterval(getLivedata, interval);
 
 module.exports = { getLivedata };

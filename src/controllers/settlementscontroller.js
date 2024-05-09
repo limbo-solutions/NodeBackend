@@ -678,41 +678,55 @@ async function getCurrenciesOfCompany(req, res) {
   }
 }
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "no.reply.centpays@gmail.com",
-    pass: "hkbm gogq vyni fzfy",
-  },
-});
+const transporters = {
+  'mailto:no.reply.centpays@gmail.com': nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "mailto:no.reply.centpays@gmail.com",
+      pass: "hkbm gogq vyni fzfy",
+    },
+  }),
+  'mailto:sakinashahid2102@gmail.com': nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "mailto:sakinashahid2102@gmail.com",
+      pass: "jhwp ifvs hryh rwrn",
+    },
+  }),
+};
 
 async function sendEmail(req, res) {
-  console.log("entered")
-  const { fromEmail, toEmail, subject, message } = req.body;
+  const { fromEmail, toEmail, ccEmail, subject, message } = req.body;
   const attachment = req.file;
-  console.log(req.file);
+
   try {
-    console.table([fromEmail, toEmail, subject, message, attachment]);
+    const selectedTransporter = transporters[fromEmail];
+    if (!selectedTransporter) {
+      return res.status(400).json({ message: "Invalid fromEmail" });
+    }
 
     const mailOptions = {
-      from: "no.reply.centpays@gmail.com",
+      from: fromEmail,
       to: toEmail,
+      cc: ccEmail,
       subject: subject,
       text: message,
       attachments: attachment
         ? [
             {
               filename: attachment.originalname,
-
               contentType: attachment.mimetype,
+              path: attachment.path,
             },
           ]
         : [],
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await selectedTransporter.sendMail(mailOptions);
 
     console.log("Email sent successfully:");
     res.status(200).json({ message: "Email sent successfully" });
@@ -783,6 +797,26 @@ function calculateAppDecValues(transactions, currency) {
   };
 }
 
+async function deleteSettlement(req, res) {
+  try {
+    const { _id } = req.body;
+    if (!_id) {
+      return res.status(400).json({ error: "ID is required in the request body" });
+    }
+
+    const deletedSettlement = await Settlementtable.findByIdAndDelete(_id);
+
+    if (!deletedSettlement) {
+      return res.status(404).json({ error: "Settlement not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Settlement deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -794,4 +828,5 @@ module.exports = {
   getCurrenciesOfCompany,
   sendEmail,
   getCounts,
+  deleteSettlement,
 };
