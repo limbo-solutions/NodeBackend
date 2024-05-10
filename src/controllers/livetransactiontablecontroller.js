@@ -111,8 +111,8 @@ async function getLivedata(req, res) {
   }
 }
 
-const interval = 60000; // 1 min interval
-// setInterval(getLivedata, interval);
+const interval = 60000; 
+setInterval(getLivedata, interval);
 
 async function searchTransactions(req, res) {
   try {
