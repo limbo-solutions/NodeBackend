@@ -23,11 +23,7 @@ router.post("/settlements", verifyToken, createSettlement);
 router.post("/previewsettlement", verifyToken, previewSettlement);
 router.get("/settlements", verifyToken, getSettlement);
 router.put("/updatesettlements", verifyToken, updateSettlement);
-router.get(
-  "/getsettlementrecordforpdf",
-  verifyToken,
-  getSettlementRecordforPDF
-);
+router.get("/getsettlementrecordforpdf", verifyToken, getSettlementRecordforPDF);
 router.get("/listsettlement", verifyToken, listSettlement);
 router.get("/companylist", verifyToken, getCompanyList);
 router.get("/currenciesforcompany", verifyToken, getCurrenciesOfCompany);

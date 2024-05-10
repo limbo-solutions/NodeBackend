@@ -147,4 +147,19 @@ async function searchTransactions(req, res) {
   }
 }
 
-module.exports = { getLivedata, searchTransactions };
+async function getLatestTransactions(req, res) {
+  try {
+    const transactions = await LiveTransactionTable.find().sort({ transactiondate: -1 }).limit(100); 
+
+    if (req && res) {
+      res.json(transactions);
+    }
+  } catch (error) {
+    console.error("Error fetching latest transactions:", error);
+    if (req && res) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+}
+
+module.exports = { getLivedata, searchTransactions, getLatestTransactions };
