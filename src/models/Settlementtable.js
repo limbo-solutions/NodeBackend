@@ -30,6 +30,8 @@ const settlementtableSchema = new mongoose.Schema({
   date_settled: { type: String },
   status: { type: String, default: "Pending" },
   note: { type: String },
+  conversion_rate: { type: Number },
+  settlement_in_usdt: { type: Number },
 });
 
 const Settlementtable = mongoose.model(

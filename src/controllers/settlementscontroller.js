@@ -22,6 +22,8 @@ async function createSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     } = req.body;
 
@@ -191,11 +193,12 @@ async function createSettlement(req, res) {
       total_chargeback_amount,
       date_settled: settlementDate,
       settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     };
 
     const settlementRecordInstance = new Settlementtable(settlement_record);
-    // Save the record to the database
     await settlementRecordInstance.save();
 
     res.status(201).json({
@@ -228,6 +231,8 @@ async function previewSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     } = req.body;
 
@@ -368,6 +373,8 @@ console.log(newtoDate)
       settlement_fee_amount,
       total_refund_amount,
       total_chargeback_amount,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       settlement_vol,
     ]);
 
@@ -400,6 +407,8 @@ console.log(newtoDate)
       total_chargeback_amount,
       date_settled: settlementDate,
       settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     };
     res.status(201).json({
