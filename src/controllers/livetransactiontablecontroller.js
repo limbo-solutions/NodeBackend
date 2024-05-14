@@ -111,7 +111,55 @@ async function getLivedata(req, res) {
   }
 }
 
-const interval = 60000; // 1 min interval
+const interval = 60000; 
 setInterval(getLivedata, interval);
 
-module.exports = { getLivedata };
+async function searchTransactions(req, res) {
+  try {
+    const { fromDate, toDate, status } = req.body;
+
+    // Ensure fromDate and toDate are provided and valid
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ error: "Both fromDate and toDate are required" });
+    }
+
+    // Construct the query
+    const query = {
+      transactiondate: {
+        $gte: fromDate,
+        $lte: toDate,
+      }
+    };
+
+    // Add status to the query if provided
+    if (status) {
+      query.Status = status;
+    }
+
+    // Search transactions based on the query
+    const transactions = await LiveTransactionTable.find(query);
+
+    // Send the transactions as response
+    res.json(transactions);
+  } catch (error) {
+    console.error("Error searching transactions:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+async function getLatestTransactions(req, res) {
+  try {
+    const transactions = await LiveTransactionTable.find().sort({ transactiondate: -1 }).limit(100); 
+
+    if (req && res) {
+      res.json(transactions);
+    }
+  } catch (error) {
+    console.error("Error fetching latest transactions:", error);
+    if (req && res) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+}
+
+module.exports = { getLivedata, searchTransactions, getLatestTransactions };

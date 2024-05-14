@@ -631,6 +631,7 @@ async function sendEmail(req, res) {
   }
 }
 
+
 // async function sendEmail(req, res) {
 //   const { fromEmail, toEmail, ccEmail, subject, message, password } = req.body;
 //   const attachment = req.file;

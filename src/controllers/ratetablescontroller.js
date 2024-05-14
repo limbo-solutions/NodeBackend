@@ -15,7 +15,6 @@ async function createRatetable(req, res) {
       currency,
     } = req.body;
 
-    // Create a new Transactiontable
     const ratetable = new Ratetable({
       company_name,
       MDR,
@@ -28,7 +27,6 @@ async function createRatetable(req, res) {
       currency,
     });
 
-    // Save the Transactiontable to the database
     await ratetable.save();
 
     res.status(201).json({

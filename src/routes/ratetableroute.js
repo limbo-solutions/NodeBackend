@@ -9,7 +9,6 @@ const {
 
 const router = express.Router();
 
-// Define user routes
 router.post("/ratetables", verifyToken, createRatetable);
 router.get("/ratetables", verifyToken, getRatetable);
 router.get("/getrates", verifyToken, getRates);
