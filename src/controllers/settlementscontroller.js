@@ -22,6 +22,8 @@ async function createSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     } = req.body;
 
@@ -191,11 +193,12 @@ async function createSettlement(req, res) {
       total_chargeback_amount,
       date_settled: settlementDate,
       settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     };
 
     const settlementRecordInstance = new Settlementtable(settlement_record);
-    // Save the record to the database
     await settlementRecordInstance.save();
 
     res.status(201).json({
@@ -228,6 +231,8 @@ async function previewSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     } = req.body;
 
@@ -368,6 +373,8 @@ console.log(newtoDate)
       settlement_fee_amount,
       total_refund_amount,
       total_chargeback_amount,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       settlement_vol,
     ]);
 
@@ -400,6 +407,8 @@ console.log(newtoDate)
       total_chargeback_amount,
       date_settled: settlementDate,
       settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
       note,
     };
     res.status(201).json({
@@ -441,120 +450,6 @@ async function calculateReportID(client_id) {
   const reportNumberPadded = nextReportNumber.toString().padStart(2, "0");
   const report_id = `${client_id}${reportNumberPadded}`;
   return report_id;
-}
-
-function calculateCurrencyValues(transactions, currency) {
-  // Filter transactions based on the given currency
-  const currency_txn = transactions.filter(
-    (transaction) => transaction.currency === currency
-  );
-
-  // Initialize an object to hold the approved and declined transactions
-  const { approved_txns, declined_txns } = currency_txn.reduce(
-    (result, transaction) => {
-      if (transaction.Status === "Success") {
-        result.approved_txns.push(transaction);
-      } else if (transaction.Status === "Failed") {
-        result.declined_txns.push(transaction);
-      }
-      return result;
-    },
-    { approved_txns: [], declined_txns: [] }
-  );
-
-  // Calculate the counts and volumes for approved and declined transactions
-  const approved_count = approved_txns.length;
-  const approved_volume = parseFloat(
-    approved_txns.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
-  );
-
-  const declined_count = declined_txns.length;
-  const declined_volume = parseFloat(
-    declined_txns.reduce((total, txn) => total + txn.amount, 0).toFixed(3)
-  );
-
-  // Calculate total volume
-  const total_volume = parseFloat(
-    (approved_volume + declined_volume).toFixed(3)
-  );
-
-  // Return an object with the calculated values
-  return {
-    approved_count,
-    approved_volume,
-    declined_count,
-    declined_volume,
-    total_volume,
-  };
-}
-
-function calculateFees(
-  rates,
-  total_vol,
-  total_app_count,
-  total_dec_count,
-  refund_count,
-  refunds_amount,
-  chargeback_count,
-  chargebacks_amount
-) {
-  const MDR = rates.MDR;
-  const RR = rates.RR;
-  const settlement_fee = rates.settlement_fee;
-  const txn_app = rates.txn_app;
-  const txn_dec = rates.txn_dec;
-  const refund_fee = rates.refund_fee;
-  const chargeback_fee = rates.chargeback_fee;
-
-  const MDR_amount = parseFloat((total_vol * (MDR / 100)).toFixed(3));
-  const app_amount = parseFloat((total_app_count * txn_app).toFixed(3));
-  const dec_amount = parseFloat((total_dec_count * txn_dec).toFixed(3));
-  const RR_amount = parseFloat((total_vol * (RR / 100)).toFixed(3));
-
-  const amt_after_fees = parseFloat(
-    (total_vol - MDR_amount - app_amount - dec_amount - RR_amount).toFixed(3)
-  );
-
-  const settlement_fee_amount = parseFloat(
-    (amt_after_fees * (settlement_fee / 100)).toFixed(3)
-  );
-
-  const settlement_amount = parseFloat(
-    (amt_after_fees - settlement_fee_amount).toFixed(3)
-  );
-
-  const total_refund_amount =
-    parseFloat(refund_count) * refund_fee + parseFloat(refunds_amount);
-
-  const total_chargeback_amount =
-    parseFloat(chargeback_count) * chargeback_fee +
-    parseFloat(chargebacks_amount);
-
-  const settlement_vol = parseFloat(
-    (settlement_amount - total_refund_amount - total_chargeback_amount).toFixed(
-      3
-    )
-  );
-  console.table([
-    MDR_amount,
-    app_amount,
-    dec_amount,
-    RR_amount,
-    settlement_fee_amount,
-    total_refund_amount,
-    total_chargeback_amount,
-    settlement_vol,
-  ]);
-  return {
-    MDR_amount,
-    app_amount,
-    dec_amount,
-    RR_amount,
-    settlement_fee_amount,
-    total_refund_amount,
-    total_chargeback_amount,
-    settlement_vol,
-  };
 }
 
 async function getSettlement(req, res) {
@@ -678,41 +573,55 @@ async function getCurrenciesOfCompany(req, res) {
   }
 }
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "no.reply.centpays@gmail.com",
-    pass: "hkbm gogq vyni fzfy",
-  },
-});
+const transporters = {
+  'no.reply.centpays@gmail.com': nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "no.reply.centpays@gmail.com",
+      pass: "hkbm gogq vyni fzfy",
+    },
+  }),
+  'sakinashahid2102@gmail.com': nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "sakinashahid2102@gmail.com",
+      pass: "jhwp ifvs hryh rwrn",
+    },
+  }),
+};
 
 async function sendEmail(req, res) {
-  console.log("entered")
-  const { fromEmail, toEmail, subject, message } = req.body;
+  const { fromEmail, toEmail, ccEmail, subject, message } = req.body;
   const attachment = req.file;
-  console.log(req.file);
+
   try {
-    console.table([fromEmail, toEmail, subject, message, attachment]);
+    const selectedTransporter = transporters[fromEmail];
+    if (!selectedTransporter) {
+      return res.status(400).json({ message: "Invalid fromEmail" });
+    }
 
     const mailOptions = {
-      from: "no.reply.centpays@gmail.com",
+      from: fromEmail,
       to: toEmail,
+      cc: ccEmail,
       subject: subject,
       text: message,
       attachments: attachment
         ? [
             {
               filename: attachment.originalname,
-
               contentType: attachment.mimetype,
+              path: attachment.path,
             },
           ]
         : [],
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await selectedTransporter.sendMail(mailOptions);
 
     console.log("Email sent successfully:");
     res.status(200).json({ message: "Email sent successfully" });
@@ -721,6 +630,48 @@ async function sendEmail(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// async function sendEmail(req, res) {
+//   const { fromEmail, toEmail, ccEmail, subject, message, password } = req.body;
+//   const attachment = req.file;
+
+//   try {
+//     const transporter = nodemailer.createTransport({
+//       host: "smtp.gmail.com",
+//       port: 587,
+//       secure: false,
+//       auth: {
+//         user: fromEmail,
+//         pass: password,
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: fromEmail,
+//       to: toEmail,
+//       cc: ccEmail,
+//       subject: subject,
+//       text: message,
+//       attachments: attachment
+//         ? [
+//             {
+//               filename: attachment.originalname,
+//               contentType: attachment.mimetype,
+//               path: attachment.path,
+//             },
+//           ]
+//         : [],
+//     };
+
+//     const info = await transporter.sendMail(mailOptions);
+
+//     console.log("Email sent successfully:");
+//     res.status(200).json({ message: "Email sent successfully" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// }
 
 async function getCounts(req, res) {
   try {
@@ -783,6 +734,26 @@ function calculateAppDecValues(transactions, currency) {
   };
 }
 
+async function deleteSettlement(req, res) {
+  try {
+    const { _id } = req.body;
+    if (!_id) {
+      return res.status(400).json({ error: "ID is required in the request body" });
+    }
+
+    const deletedSettlement = await Settlementtable.findByIdAndDelete(_id);
+
+    if (!deletedSettlement) {
+      return res.status(404).json({ error: "Settlement not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Settlement deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -794,4 +765,5 @@ module.exports = {
   getCurrenciesOfCompany,
   sendEmail,
   getCounts,
+  deleteSettlement,
 };
