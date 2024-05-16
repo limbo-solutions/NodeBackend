@@ -98,8 +98,7 @@ const AdminweeklyStats = async (req, res) => {
     "0" +
     (dayDate.getMonth() + 1)
   ).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 23:59:59`;
-console.log(fromDate)
-console.log(toDate)
+
 
       const query = {
         transactiondate: { $gte: fromDate, $lte: toDate },
@@ -165,8 +164,7 @@ console.log(toDate)
     "0" +
     (previousweekendDate.getMonth() + 1)
   ).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
-console.log("previous", fromDate.toLocaleString());
-console.log(toDate)
+
 
   const query = {
     transactiondate: { $gte: fromDate, $lte: toDate },
@@ -191,6 +189,7 @@ console.log(toDate)
   const previousresults = await LiveTransactionTable.aggregate(aggregationPipeline);
 console.log("previous",previousresults)
   const previousWeekSuccessTotalCount = previousresults.length > 0 ? previousresults[0].count : 0;
+
   console.log(currentWeekSuccessTotalCount);
   console.log(previousWeekSuccessTotalCount)
     let percentageChange;

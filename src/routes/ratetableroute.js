@@ -12,6 +12,6 @@ const router = express.Router();
 router.post("/ratetables", verifyToken, createRatetable);
 router.get("/ratetables", verifyToken, getRatetable);
 router.get("/getrates", verifyToken, getRates);
-router.post("/updateratetables", verifyToken, updateRatetable);
+router.patch("/updateratetable", verifyToken, updateRatetable);
 
 module.exports = router;

@@ -1,22 +1,6 @@
 require("../config/database");
 const LiveTransactionTable = require("../models/LiveTransactionTable");
 
-function formatDateTime(dateTimeString) {
-  const date = new Date(dateTimeString);
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
-
-  const formattedDateTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-
-  return formattedDateTime;
-}
-
 async function getLivedata(req, res) {
   try {
     const apiUrl = "https://centpays.com/apidoc/get_all_transaction";
@@ -33,7 +17,6 @@ async function getLivedata(req, res) {
     const apiData = await response.json();
     const data = apiData.data;
 
-    // Get the last processed ID
     const lastProcessedRecord = await LiveTransactionTable.findOne().sort({
       livedata_id: -1,
     });
@@ -99,7 +82,6 @@ async function getLivedata(req, res) {
 
     await LiveTransactionTable.insertMany(dataToStore);
 
-    // If a request is made to the endpoint, send the stored data as a response
     if (req && res) {
       res.json(dataToStore);
     }
@@ -118,12 +100,10 @@ async function searchTransactions(req, res) {
   try {
     const { fromDate, toDate, status } = req.body;
 
-    // Ensure fromDate and toDate are provided and valid
     if (!fromDate || !toDate) {
       return res.status(400).json({ error: "Both fromDate and toDate are required" });
     }
 
-    // Construct the query
     const query = {
       transactiondate: {
         $gte: fromDate,
@@ -131,15 +111,12 @@ async function searchTransactions(req, res) {
       }
     };
 
-    // Add status to the query if provided
     if (status) {
       query.Status = status;
     }
 
-    // Search transactions based on the query
     const transactions = await LiveTransactionTable.find(query);
 
-    // Send the transactions as response
     res.json(transactions);
   } catch (error) {
     console.error("Error searching transactions:", error);

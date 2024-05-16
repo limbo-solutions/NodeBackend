@@ -70,79 +70,21 @@ async function getRatetable(req, res) {
 
 async function updateRatetable(req, res) {
   try {
-    const {
-      company_name,
-      settlement_scheme,
-      MDR,
-      txn_app,
-      txn_dec,
-      txn_total,
-      RR,
-      settlement_fee,
-    } = req.body;
-    if (!company_name) {
-      return res.status(400).json({ error: "Company name is required" });
+    const { id, ...updateFields } = req.body;
+
+    const rates = await Ratetable.findById(id);
+
+    if (!rates) {
+      return res.status(404).json({ error: "Rate table not found" });
     }
 
-    let ratetable = await Ratetable.findOne({ company_name });
-    if (!ratetable) {
-      return res
-        .status(404)
-        .json({ error: "Ratetable for this company not found" });
-    }
+    Object.keys(updateFields).forEach(field => {
+      rates[field] = updateFields[field];
+    });
 
-    if (settlement_scheme !== undefined) {
-      ratetable.settlement_scheme = settlement_scheme;
-    }
-    if (MDR !== undefined) {
-      ratetable.MDR = MDR;
-    }
-    if (txn_app !== undefined) {
-      ratetable.txn_app = parseFloat(txn_app);
-      if (isNaN(ratetable.txn_app)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid value for txn_app, must be a number" });
-      }
-    }
-    if (txn_dec !== undefined) {
-      ratetable.txn_dec = parseFloat(txn_dec);
-      if (isNaN(ratetable.txn_dec)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid value for txn_dec, must be a number" });
-      }
-    }
-    if (txn_total !== undefined) {
-      ratetable.txn_total = parseFloat(txn_total);
-      if (isNaN(ratetable.txn_total)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid value for txn_total, must be a number" });
-      }
-    }
-    if (RR !== undefined) {
-      ratetable.RR = parseFloat(RR);
-      if (isNaN(ratetable.RR)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid value for RR, must be a number" });
-      }
-    }
-    if (settlement_fee !== undefined) {
-      ratetable.settlement_fee = parseFloat(settlement_fee);
-      if (isNaN(ratetable.settlement_fee)) {
-        return res.status(400).json({
-          error: "Invalid value for settlement_fee, must be a number",
-        });
-      }
-    }
+    await rates.save();
 
-    ratetable = await ratetable.save();
-
-    res
-      .status(200)
-      .json({ message: "Ratetable updated successfully", ratetable });
+    res.status(200).json({ message: "Rate table updated successfully", rates: rates });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
