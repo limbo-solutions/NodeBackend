@@ -28,6 +28,7 @@ const clientSchema = new mongoose.Schema({
   website_url: { type: String },
   merchant_id: { type: String },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+  last_settled_date: {type: String},
   currency: {
     type: [String],
     validate: {

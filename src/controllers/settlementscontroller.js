@@ -200,7 +200,7 @@ async function createSettlement(req, res) {
 
     const settlementRecordInstance = new Settlementtable(settlement_record);
     await settlementRecordInstance.save();
-
+console.log("Record saved")
     res.status(201).json({
       success: true,
       settlement_record,
