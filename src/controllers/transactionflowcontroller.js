@@ -178,7 +178,7 @@ async function initiateTransaction(req, res) {
 async function Bank(dataforBank) {
   console.log("In bank");
   try {
-    const response = await fetch("http://localhost:3001", {
+    const response = await fetch("http://54.159.39.148/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
