@@ -755,6 +755,216 @@ async function deleteSettlement(req, res) {
   }
 }
 
+async function manualSettlements(req, res) {
+  try {
+    const {
+      fromDate,
+      toDate,
+      company_name,
+      app_vol,
+      usd_app_count,
+      usd_dec_count,
+      usd_no_of_refund,
+      usd_no_of_chargeback,
+      usd_refund_amount,
+      usd_chargeback_amount,
+      eur_app_count,
+      eur_dec_count,
+      eur_no_of_refund,
+      eur_no_of_chargeback,
+      eur_refund_amount,
+      eur_chargeback_amount,
+      MDR_amount,
+      app_amount,
+      dec_amount,
+      RR_amount,
+      settlement_fee_amount,
+      total_refund_amount,
+      total_chargeback_amount,
+      eur_to_usd_exc_rate,
+      usd_to_eur_exc_rate,
+      settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
+      note,
+    } = req.body;
+
+    const settlementDate = new Date().toISOString().split("T")[0];
+
+    const client_data = await Client.findOne({ company_name });
+    const report_id = await calculateReportID(client_data.client_id);
+
+    const settlement = new Settlementtable({
+      client_id: client_data["client_id"],
+      report_id,
+      fromDate,
+      toDate,
+      company_name,
+      app_vol,
+      usd_app_count,
+      usd_dec_count,
+      usd_no_of_refund,
+      usd_no_of_chargeback,
+      usd_refund_amount,
+      usd_chargeback_amount,
+      eur_app_count,
+      eur_dec_count,
+      eur_no_of_refund,
+      eur_no_of_chargeback,
+      eur_refund_amount,
+      eur_chargeback_amount,
+      MDR_amount,
+      app_amount,
+      dec_amount,
+      RR_amount,
+      settlement_fee_amount,
+      total_refund_amount,
+      total_chargeback_amount,
+      eur_to_usd_exc_rate,
+      usd_to_eur_exc_rate,
+      settlement_vol,
+      date_settled: settlementDate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
+      note,
+    });
+
+    await settlement.save()
+
+    res.status(201).json({
+      message: "Settlement created successully",
+      settlement: settlement,
+    });
+
+    await Client.updateOne(
+      { company_name: company_name },
+      { last_settled_date: settlementDate }
+    );
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+async function semimanualSettlements (req, res){
+  try {
+    const {
+      fromDate,
+      toDate,
+      company_name,
+      app_vol,
+      usd_app_count,
+      usd_dec_count,
+      usd_no_of_refund,
+      usd_no_of_chargeback,
+      usd_refund_amount,
+      usd_chargeback_amount,
+      eur_app_count,
+      eur_dec_count,
+      eur_no_of_refund,
+      eur_no_of_chargeback,
+      eur_refund_amount,
+      eur_chargeback_amount,
+      eur_to_usd_exc_rate,
+      usd_to_eur_exc_rate,
+      conversion_in_usdt,
+      total_amount_in_usdt,
+      note,
+    } = req.body;
+
+    const client_data = await Client.findOne({ company_name });
+    const rates = await Ratetable.findOne({ company_name: company_name });
+
+    const refund_count = parseFloat(eur_no_of_refund + usd_no_of_refund);
+    const chargeback_count = parseFloat(eur_no_of_chargeback + usd_no_of_chargeback);
+
+    const refund_amount = parseFloat(eur_refund_amount + usd_refund_amount);
+    const chargeback_amount = parseFloat(eur_chargeback_amount + usd_chargeback_amount);
+
+    const settlementDate = new Date().toISOString().split("T")[0];
+
+    const app_count = parseFloat(eur_app_count + usd_app_count);
+    const dec_count = parseFloat(eur_dec_count + usd_dec_count);
+
+    const MDR_amount = parseFloat((app_vol * (rates.MDR / 100)).toFixed(3));
+    const app_amount = parseFloat((app_count * rates.txn_app).toFixed(3));
+    const dec_amount = parseFloat((dec_count * rates.txn_dec).toFixed(3));
+    const RR_amount = parseFloat((app_vol * (rates.RR / 100)).toFixed(3));
+
+    const amt_after_fees = parseFloat(
+      (app_vol - MDR_amount - app_amount - dec_amount - RR_amount).toFixed(3)
+    );
+
+    const settlement_fee_amount = parseFloat(
+      (amt_after_fees * (rates.settlement_fee / 100)).toFixed(3)
+    );
+
+    const settlement_amount = parseFloat(
+      (amt_after_fees - settlement_fee_amount).toFixed(3)
+    );
+
+    const total_refund_amount =
+      parseFloat(refund_count) * rates.refund_fee + parseFloat(refund_amount);
+
+    const total_chargeback_amount =
+      parseFloat(chargeback_count) * rates.chargeback_fee +
+      parseFloat(chargeback_amount);
+
+    const settlement_vol = parseFloat(
+      (
+        settlement_amount -
+        total_refund_amount -
+        total_chargeback_amount
+      ).toFixed(3)
+    );
+
+    const report_id = await calculateReportID(client_data.client_id);
+    
+    const settlementmanual_record = new Settlementtable({
+      client_id: client_data["client_id"],
+      report_id,
+      company_name,
+      fromDate,
+      toDate,
+      total_vol: app_vol,
+      eur_app_count,
+      eur_dec_count,
+      usd_app_count,
+      usd_dec_count,
+      MDR_amount,
+      app_amount,
+      dec_amount,
+      RR_amount,
+      settlement_fee_amount,
+      eur_no_of_refund,
+      usd_no_of_refund,
+      eur_refund_amount,
+      usd_refund_amount,
+      eur_no_of_chargeback,
+      usd_no_of_chargeback,
+      eur_chargeback_amount,
+      usd_chargeback_amount,
+      total_refund_amount,
+      total_chargeback_amount,
+      date_settled: settlementDate,
+      settlement_vol,
+      conversion_in_usdt,
+      total_amount_in_usdt,
+      note,
+    });
+
+    await settlementmanual_record.save()
+    res.status(201).json({
+      message: "Settlement created successully",
+      settlementmanual_record: settlementmanual_record,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -767,4 +977,6 @@ module.exports = {
   sendEmail,
   getCounts,
   deleteSettlement,
+  semimanualSettlements,
+  manualSettlements
 };

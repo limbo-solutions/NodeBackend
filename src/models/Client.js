@@ -30,10 +30,11 @@ const clientSchema = new mongoose.Schema({
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   last_settled_date: {type: String},
   currency: {
+    default: ["USD", "EUR"],
     type: [String],
     validate: {
       validator: function (v) {
-        return Array.isArray(v); // Ensure the field is an array
+        return Array.isArray(v); 
       },
     },
   },
