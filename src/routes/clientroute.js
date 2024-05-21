@@ -8,7 +8,7 @@ const router = express.Router();
 // Define user routes
 router.post("/clients", verifyToken, createClient);
 router.get("/clients", verifyToken, getClient);
-router.get("/viewclient", verifyToken, viewClient);
+router.get("/viewclient",  viewClient);
 router.patch("/updateclient", verifyToken, updateClient);
 
 module.exports = router;
