@@ -28,11 +28,34 @@ async function createClient(req, res) {
       turnover,
       expected_chargeback_percentage,
       website_url,
-      merchant_id,
-      status,
+      // merchant_id,
       currency,
     } = req.body;
-
+console.table({company_name,
+  username,
+  email,
+  phone_number,
+  postal_code,
+  country,
+  state,
+  city,
+  street_address,
+  street_address2,
+  industries_id,
+  director_first_name,
+  director_last_name,
+  skype_id,
+  business_type,
+  business_category,
+  business_subcategory,
+  buiness_registered_on,
+  merchant_pay_in,
+  merchant_pay_out,
+  settlement_charge,
+  turnover,
+  expected_chargeback_percentage,
+  website_url,
+  currency,})
     const client = new Client({
       company_name,
       username,
@@ -58,13 +81,13 @@ async function createClient(req, res) {
       turnover,
       expected_chargeback_percentage,
       website_url,
-      merchant_id,
-      status,
+      // merchant_id,
+      // status,
       currency,
     });
 
     await client.save();
-
+console.log("saved")
     res
       .status(201)
       .json({ message: "Client created successfully", client: client });
@@ -78,6 +101,17 @@ async function getClient(req, res) {
   try {
     const clients = await Client.find();
     res.status(200).json(clients);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+async function viewClient(req, res) {
+  try {
+    const {company_name} = req.query.company_name;
+    const client = await Client.findByOne({company_name});
+    res.status(200).json(client);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -111,4 +145,4 @@ async function updateClient(req, res) {
   }
 }
 
-module.exports = { createClient, getClient, updateClient };
+module.exports = { createClient, getClient, viewClient, updateClient };
