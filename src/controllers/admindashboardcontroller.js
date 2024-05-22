@@ -74,34 +74,29 @@ const AdminsuccessPercentageToday = async (req, res) => {
 };
 
 const AdminweeklyStats = async (req, res) => {
-  const { currency, merchant } = req.query;
+  const { currency, merchant, fromDate: userFromDate } = req.query;
   try {
     const currentDate = new Date();
+    const oneDayMilliseconds = 24 * 60 * 60 * 1000;
+
+    const fromDate = userFromDate ? new Date(userFromDate) : new Date(currentDate.getTime() - 6 * oneDayMilliseconds);
+
     const results = [];
     const transactionCounts = [];
     let successThisWeek = 0;
     let failedThisWeek = 0;
-    let incompleteThisWeek=0;
-    let currentWeekSuccessTotalCount = 0
+    let incompleteThisWeek = 0;
+    let currentWeekSuccessTotalCount = 0;
     let totalNumTxn = 0;
 
-    const oneDayMilliseconds = 24 * 60 * 60 * 1000; 
-
     for (let i = 0; i < 7; i++) {
-  const dayDate = new Date(currentDate.getTime() - i * oneDayMilliseconds);
+      const dayDate = new Date(fromDate.getTime() + i * oneDayMilliseconds);
 
-  const fromDate = `${dayDate.getFullYear()}-${(
-    "0" +
-    (dayDate.getMonth() + 1)
-  ).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 00:00:00`;
-  const toDate = `${dayDate.getFullYear()}-${(
-    "0" +
-    (dayDate.getMonth() + 1)
-  ).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 23:59:59`;
-
+      const fromTime = `${dayDate.getFullYear()}-${("0" + (dayDate.getMonth() + 1)).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 00:00:00`;
+      const toTime = `${dayDate.getFullYear()}-${("0" + (dayDate.getMonth() + 1)).slice(-2)}-${("0" + dayDate.getDate()).slice(-2)} 23:59:59`;
 
       const query = {
-        transactiondate: { $gte: fromDate, $lte: toDate },
+        transactiondate: { $gte: fromTime, $lte: toTime },
         currency: currency
       };
       if (merchant) {
@@ -110,11 +105,13 @@ const AdminweeklyStats = async (req, res) => {
 
       const aggregationPipeline = [
         { $match: query },
-        {$group: { 
-          _id: "$Status", 
-          count: { $sum: 1 }, 
-          totalAmount: { $sum: "$amount" } 
-        } }
+        {
+          $group: {
+            _id: "$Status",
+            count: { $sum: 1 },
+            totalAmount: { $sum: "$amount" }
+          }
+        }
       ];
 
       const resultsForDay = await LiveTransactionTable.aggregate(aggregationPipeline);
@@ -141,62 +138,51 @@ const AdminweeklyStats = async (req, res) => {
       transactionCounts.push({
         date: dayFormatted,
         totalCount: successCount + failedCount + incompleteCount
-      })
-      currentWeekSuccessTotalCount += successCount
+      });
+      currentWeekSuccessTotalCount += successCount;
 
       successThisWeek += successAmount;
       failedThisWeek += failedAmount;
       incompleteThisWeek += incompleteAmount;
 
-      totalThisWeek = successThisWeek + failedThisWeek + incompleteThisWeek ;
-      totalNumTxn += successCount + failedCount + incompleteCount
+      totalThisWeek = successThisWeek + failedThisWeek + incompleteThisWeek;
+      totalNumTxn += successCount + failedCount + incompleteCount;
     }
 
-    const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const previousweekendDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const previousWeekStartDate = new Date(fromDate.getTime() - 14 * oneDayMilliseconds);
+    const previousWeekEndDate = new Date(fromDate.getTime() - 7 * oneDayMilliseconds);
 
-    const fromDate = `${previousweekstartDate.getFullYear()}-${(
-      "0" +
-      (previousweekstartDate.getMonth() + 1)
-    ).slice(-2)}-${("0" + previousweekstartDate.getDate()).slice(-2)} 00:00:00`;
-  
-    const toDate = `${previousweekendDate.getFullYear()}-${(
-    "0" +
-    (previousweekendDate.getMonth() + 1)
-  ).slice(-2)}-${("0" + previousweekendDate.getDate()).slice(-2)} 23:59:59`;
+    const prevFromTime = `${previousWeekStartDate.getFullYear()}-${("0" + (previousWeekStartDate.getMonth() + 1)).slice(-2)}-${("0" + previousWeekStartDate.getDate()).slice(-2)} 00:00:00`;
+    const prevToTime = `${previousWeekEndDate.getFullYear()}-${("0" + (previousWeekEndDate.getMonth() + 1)).slice(-2)}-${("0" + previousWeekEndDate.getDate()).slice(-2)} 23:59:59`;
 
+    const prevQuery = {
+      transactiondate: { $gte: prevFromTime, $lte: prevToTime },
+      Status: "Success",
+      currency: currency
+    };
 
-  const query = {
-    transactiondate: { $gte: fromDate, $lte: toDate },
-    Status: "Success",
-    currency: currency
-  };
-
-  if (merchant) {
-    query.merchant = merchant;
-  }
-  
-  const aggregationPipeline = [
-    { $match: query },
-    { 
-      $group: { 
-        _id: null, 
-        count: { $sum: 1 }
-      } 
+    if (merchant) {
+      prevQuery.merchant = merchant;
     }
-  ];
-  
-  const previousresults = await LiveTransactionTable.aggregate(aggregationPipeline);
-console.log("previous",previousresults)
-  const previousWeekSuccessTotalCount = previousresults.length > 0 ? previousresults[0].count : 0;
 
-  console.log(currentWeekSuccessTotalCount);
-  console.log(previousWeekSuccessTotalCount)
+    const prevAggregationPipeline = [
+      { $match: prevQuery },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 }
+        }
+      }
+    ];
+
+    const previousResults = await LiveTransactionTable.aggregate(prevAggregationPipeline);
+    const previousWeekSuccessTotalCount = previousResults.length > 0 ? previousResults[0].count : 0;
+
     let percentageChange;
     if (previousWeekSuccessTotalCount !== 0) {
       percentageChange =
         ((currentWeekSuccessTotalCount - previousWeekSuccessTotalCount) /
-          (previousWeekSuccessTotalCount)) *
+          previousWeekSuccessTotalCount) *
         100;
     } else {
       percentageChange = 100;
@@ -209,7 +195,7 @@ console.log("previous",previousresults)
       totalThisWeek: parseFloat(totalThisWeek.toFixed(3)),
       transactionCounts,
       totalNumTxn,
-      percentageChange : parseFloat(percentageChange.toFixed(3))
+      percentageChange: parseFloat(percentageChange.toFixed(3))
     });
   } catch (error) {
     console.error("Error calculating past seven days counts:", error);
