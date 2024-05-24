@@ -27,8 +27,10 @@ const clientSchema = new mongoose.Schema({
   expected_chargeback_percentage: { type: Number },
   website_url: { type: String },
   merchant_id: { type: String },
-  status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+  status: { type: String, enum: ["Active", "Inactive", "Pending"], default: "Active" },
   last_settled_date: {type: String},
+  type: { type: String },
+  industry: { type: String },
   currency: {
     default: ["USD", "EUR"],
     type: [String],

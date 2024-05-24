@@ -13,6 +13,9 @@ async function createRatetable(req, res) {
       refund_fee,
       chargeback_fee,
       currency,
+      setup_fee,
+      settlement_cycle,
+      annual_maintenance_fee,
     } = req.body;
 
     const ratetable = new Ratetable({
@@ -25,6 +28,9 @@ async function createRatetable(req, res) {
       refund_fee,
       chargeback_fee,
       currency,
+      setup_fee,
+      settlement_cycle,
+      annual_maintenance_fee,
     });
 
     await ratetable.save();
@@ -38,6 +44,7 @@ async function createRatetable(req, res) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
 
 async function getRates(req, res) {
   try {

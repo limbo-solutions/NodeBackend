@@ -28,34 +28,13 @@ async function createClient(req, res) {
       turnover,
       expected_chargeback_percentage,
       website_url,
-      // merchant_id,
+      merchant_id,
+      status,
+      type,
+      industry,
       currency,
     } = req.body;
-console.table({company_name,
-  username,
-  email,
-  phone_number,
-  postal_code,
-  country,
-  state,
-  city,
-  street_address,
-  street_address2,
-  industries_id,
-  director_first_name,
-  director_last_name,
-  skype_id,
-  business_type,
-  business_category,
-  business_subcategory,
-  buiness_registered_on,
-  merchant_pay_in,
-  merchant_pay_out,
-  settlement_charge,
-  turnover,
-  expected_chargeback_percentage,
-  website_url,
-  currency,})
+
     const client = new Client({
       company_name,
       username,
@@ -81,13 +60,15 @@ console.table({company_name,
       turnover,
       expected_chargeback_percentage,
       website_url,
-      // merchant_id,
-      // status,
+      merchant_id,
+      status,
+      type,
+      industry,
       currency,
     });
 
     await client.save();
-console.log("saved")
+
     res
       .status(201)
       .json({ message: "Client created successfully", client: client });
@@ -146,4 +127,4 @@ async function updateClient(req, res) {
   }
 }
 
-module.exports = { createClient, getClient, viewClient, updateClient };
+module.exports = { createClient, getClient, viewClient, updateClient }
