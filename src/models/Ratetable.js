@@ -13,6 +13,10 @@ const ratetableSchema = new mongoose.Schema({
   setup_fee: { type: Number },
   settlement_cycle: { type: String },
   annual_maintenance_fee: { type: Number }, 
+  RR_remark: { type: String },
+  setupFee_remark: { type: String },
+  settlementFee_remark: { type: String },
+  annualMaintenanceFee_remark: { type: String },
 });
 
 const Ratetable = mongoose.model("Ratetable", ratetableSchema);

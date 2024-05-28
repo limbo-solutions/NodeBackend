@@ -7,6 +7,7 @@ async function searchTransactionReport(req, res) {
       txnid,
       merchantTxnId,
       orderNo,
+      id,
       Status,
       fromDate,
       toDate,
@@ -19,7 +20,6 @@ async function searchTransactionReport(req, res) {
       cardnumber,
     } = req.body;
 
-    // const transactiondate = { $gte: fromDateWithTime, $lte: toDateWithTime };
     const searchCriteria = {};
 
     if (txnid !== undefined) {
@@ -29,12 +29,12 @@ async function searchTransactionReport(req, res) {
     }
     if (merchantTxnId !== undefined) {
       searchCriteria.merchantTxnId = {
-        $regex: new RegExp(`^${merchantTxnId}$`),
+        $regex: new RegExp(`^${merchantTxnId}$`, "i"),
       };
     }
     if (orderNo !== undefined) {
       searchCriteria.orderNo = {
-        $regex: new RegExp(`^${orderNo}$`),
+        $regex: new RegExp(`^${orderNo}$`, "i"),
       };
     }
 
@@ -86,7 +86,7 @@ async function searchTransactionReport(req, res) {
         $regex: new RegExp(`^${cardnumber}$`, "i"),
       };
     }
-
+console.log(searchCriteria);
     const foundRecords = await Transactiontable.find(searchCriteria);
 
     if (foundRecords.length > 0) {
