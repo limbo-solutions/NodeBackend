@@ -511,68 +511,6 @@ async function getSettlementRecordforPDF(req, res) {
   }
 }
 
-async function listSettlement(req, res) {
-  try {
-    const client_records = await Client.find();
-    const settlement_records = await Settlementtable.find();
-
-    // Calculate the length of the records
-    const client_length = client_records.length;
-
-    const settlement_length = settlement_records.length;
-    // Initialize sum variables for total_vol and settlement_vol
-    let totalVolSum = 0;
-    let settlementVolSum = 0;
-
-    // Iterate through records to calculate sums
-    for (const record of settlement_records) {
-      totalVolSum += parseFloat(record.total_vol);
-      settlementVolSum += parseFloat(record.settlement_vol);
-    }
-
-    res.json({
-      client_length,
-      settlement_length,
-      totalVolSum,
-      settlementVolSum,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-
-async function getCompanyList(req, res) {
-  try {
-    const company_names = await Client.distinct("company_name");
-    res.json(company_names);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-async function getCurrenciesOfCompany(req, res) {
-  try {
-    const company_name = req.query.company_name;
-
-    if (!company_name) {
-      return res.status(400).json({ message: "Company name is required" });
-    }
-
-    const client = await Client.findOne({ company_name: company_name });
-
-    if (!client) {
-      return res.status(404).json({ message: "Company not found" });
-    }
-    currencies = client["currency"];
-    res.json(currencies);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-
 const transporters = {
   'no.reply.centpays@gmail.com': nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -971,9 +909,6 @@ module.exports = {
   getSettlement,
   updateSettlement,
   getSettlementRecordforPDF,
-  listSettlement,
-  getCompanyList,
-  getCurrenciesOfCompany,
   sendEmail,
   getCounts,
   deleteSettlement,

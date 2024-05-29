@@ -8,15 +8,18 @@ const {
   getSettlement,
   updateSettlement,
   getSettlementRecordforPDF,
-  listSettlement,
-  getCompanyList,
-  getCurrenciesOfCompany,
   sendEmail,
   getCounts,
   deleteSettlement,semimanualSettlements,
-  manualSettlements
-
+  manualSettlements,
 } = require("../controllers/settlementscontroller");
+
+const { 
+  listSettlement,
+  getCompanyList,
+  getCurrenciesOfCompany,
+  volumeSum,
+} = require("../controllers/utilitycontroller");
 
 const router = express.Router();
 const upload = multer();
@@ -34,5 +37,6 @@ router.get("/settlements/counts", verifyToken, getCounts);
 router.delete("/deletesettlementrecord", verifyToken, deleteSettlement);
 router.post("/manualsettlements", verifyToken, manualSettlements);
 router.post("/semimanualsettlements", verifyToken, semimanualSettlements);
+router.get("/volumesum", verifyToken, volumeSum);
 
 module.exports = router;

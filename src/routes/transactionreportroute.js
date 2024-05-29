@@ -7,7 +7,6 @@ const {
 
 const router = express.Router();
 
-// Define user routes
 router.post("/transactionreport", verifyToken, searchTransactionReport);
 router.get("/transactionreport", verifyToken, quickSearch);
 

@@ -33,7 +33,7 @@ async function searchTransactionReport(req, res) {
     if (status) {
       pipeline.push({
         $match: {
-          Status: status,
+          Status: { $regex: new RegExp(`^${status}$`, 'i') },
         },
       });
     }
@@ -41,7 +41,7 @@ async function searchTransactionReport(req, res) {
     if (merchant) {
       pipeline.push({
         $match: {
-          merchant: merchant,
+          merchant: { $regex: new RegExp(`^${merchant}$`, 'i') },
         },
       });
     }
@@ -49,7 +49,7 @@ async function searchTransactionReport(req, res) {
     if (mid) {
       pipeline.push({
         $match: {
-          mid: mid,
+          mid: { $regex: new RegExp(`^${mid}$`, 'i') },
         },
       });
     }
@@ -57,7 +57,7 @@ async function searchTransactionReport(req, res) {
     if (paymentgateway) {
       pipeline.push({
         $match: {
-          paymentgateway: paymentgateway,
+          paymentgateway: { $regex: new RegExp(`^${paymentgateway}$`, 'i') },
         },
       });
     }
@@ -65,7 +65,7 @@ async function searchTransactionReport(req, res) {
     if (currency) {
       pipeline.push({
         $match: {
-          currency: currency,
+          currency: { $regex: new RegExp(`^${currency}$`, 'i') },
         },
       });
     }
@@ -73,7 +73,7 @@ async function searchTransactionReport(req, res) {
     if (country) {
       pipeline.push({
         $match: {
-          country: country,
+          country: { $regex: new RegExp(`^${country}$`, 'i') },
         },
       });
     }
@@ -81,7 +81,7 @@ async function searchTransactionReport(req, res) {
     if (cardtype) {
       pipeline.push({
         $match: {
-          cardtype: cardtype,
+          cardtype: { $regex: new RegExp(`^${cardtype}$`, 'i') },
         },
       });
     }
@@ -98,13 +98,12 @@ async function searchTransactionReport(req, res) {
       pipeline.push({
         $match: {
           $or: [
-            { txnid: { $in: searchIds.split(" ").filter(Boolean) }, },
-            { merchantTxnId: { $in: searchIds.split(" ").filter(Boolean) }, },
+            { txnid: { $in: searchIds.split(" ") } },
+            { merchantTxnId: { $in: searchIds.split(" ") } },
           ],
-          
         },
       });
-    };
+    }
 
     const transactions = await LiveTransactionTable.aggregate(pipeline);
 
