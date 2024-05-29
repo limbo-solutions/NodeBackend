@@ -1,18 +1,15 @@
 require("../config/database");
-const Transactiontable = require("../models/Transactiontable");
+const LiveTransactionTable = require("../models/LiveTransactionTable")
 
 async function searchTransactionReport(req, res) {
   try {
     const {
-      txnid,
-      merchantTxnId,
-      orderNo,
-      id,
-      Status,
+      searchIds,
+      status,
+      merchant,
       fromDate,
       toDate,
-      merchant,
-      MID,
+      mid,
       paymentgateway,
       currency,
       country,
@@ -20,84 +17,100 @@ async function searchTransactionReport(req, res) {
       cardnumber,
     } = req.body;
 
-    const searchCriteria = {};
+    const pipeline = [];
 
-    if (txnid !== undefined) {
-      searchCriteria.txnid = {
-        $regex: new RegExp(`^${txnid}$`),
-      };
-    }
-    if (merchantTxnId !== undefined) {
-      searchCriteria.merchantTxnId = {
-        $regex: new RegExp(`^${merchantTxnId}$`, "i"),
-      };
-    }
-    if (orderNo !== undefined) {
-      searchCriteria.orderNo = {
-        $regex: new RegExp(`^${orderNo}$`, "i"),
-      };
-    }
-
-    if (Status !== undefined) {
-      searchCriteria.Status = { $regex: new RegExp(`^${Status}$`, "i") };
-    }
-
-    if (fromDate !== undefined && toDate !== undefined) {
-      const fromDateWithTime = fromDate + " 00:00:00";
-      const toDateWithTime = toDate + " 23:59:59";
-      searchCriteria.transactiondate = {
-        $gte: fromDateWithTime,
-        $lte: toDateWithTime,
-      };
-    }
-
-    if (merchant !== undefined) {
-      searchCriteria.merchant = {
-        $regex: new RegExp(`^${merchant}$`, "i"),
-      };
-    }
-    if (MID !== undefined) {
-      searchCriteria.MID = {
-        $regex: new RegExp(`^${MID}$`),
-      };
-    }
-    if (paymentgateway !== undefined) {
-      searchCriteria.paymentgateway = {
-        $regex: new RegExp(`^${paymentgateway}$`, "i"),
-      };
-    }
-    if (currency !== undefined) {
-      searchCriteria.currency = {
-        $regex: new RegExp(`^${currency}$`, "i"),
-      };
-    }
-    if (country !== undefined) {
-      searchCriteria.country = {
-        $regex: new RegExp(`^${country}$`, "i"),
-      };
-    }
-    if (cardtype !== undefined) {
-      searchCriteria.cardtype = {
-        $regex: new RegExp(`^${cardtype}$`, "i"),
-      };
-    }
-    if (cardnumber !== undefined) {
-      searchCriteria.cardnumber = {
-        $regex: new RegExp(`^${cardnumber}$`, "i"),
-      };
-    }
-console.log(searchCriteria);
-    const foundRecords = await Transactiontable.find(searchCriteria);
-
-    if (foundRecords.length > 0) {
-      return res.status(200).json({
-        records: foundRecords,
+    if (fromDate && toDate) {
+      pipeline.push({
+        $match: {
+          transactiondate: {
+            $gte: fromDate,
+            $lte: toDate,
+          },
+        },
       });
-    } else {
-      return res.status(404).json({ message: "Records not found" });
     }
+
+    if (status) {
+      pipeline.push({
+        $match: {
+          Status: status,
+        },
+      });
+    }
+
+    if (merchant) {
+      pipeline.push({
+        $match: {
+          merchant: merchant,
+        },
+      });
+    }
+
+    if (mid) {
+      pipeline.push({
+        $match: {
+          mid: mid,
+        },
+      });
+    }
+
+    if (paymentgateway) {
+      pipeline.push({
+        $match: {
+          paymentgateway: paymentgateway,
+        },
+      });
+    }
+
+    if (currency) {
+      pipeline.push({
+        $match: {
+          currency: currency,
+        },
+      });
+    }
+
+    if (country) {
+      pipeline.push({
+        $match: {
+          country: country,
+        },
+      });
+    }
+
+    if (cardtype) {
+      pipeline.push({
+        $match: {
+          cardtype: cardtype,
+        },
+      });
+    }
+
+    if (cardnumber) {
+      pipeline.push({
+        $match: {
+          cardnumber: cardnumber,
+        },
+      });
+    }
+
+    if (searchIds) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { txnid: { $in: searchIds.split(" ").filter(Boolean) }, },
+            { merchantTxnId: { $in: searchIds.split(" ").filter(Boolean) }, },
+          ],
+          
+        },
+      });
+    };
+
+    const transactions = await LiveTransactionTable.aggregate(pipeline);
+
+    res.json(transactions);
   } catch (error) {
-    console.error(error);
+    console.error("Error searching transactions:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
