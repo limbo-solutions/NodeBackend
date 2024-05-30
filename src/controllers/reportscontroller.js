@@ -106,10 +106,7 @@ async function searchTransactionReport(req, res) {
     }
 
     const transactions = await LiveTransactionTable.aggregate(pipeline);
-
-    const totalResults = await LiveTransactionTable.countDocuments();
-
-    res.json({ transactions, totalResults });
+    res.json(transactions);
   } catch (error) {
     console.error("Error searching transactions:", error);
     res.status(500).json({ error: "Internal Server Error" });
