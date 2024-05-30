@@ -107,12 +107,103 @@ async function searchTransactionReport(req, res) {
 
     const transactions = await LiveTransactionTable.aggregate(pipeline);
 
-    res.json(transactions);
+    const totalResults = await LiveTransactionTable.countDocuments();
+
+    res.json({ transactions, totalResults });
   } catch (error) {
     console.error("Error searching transactions:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
+// async function searchTransactionReport(req, res) {
+//   try {
+//     const {
+//       searchIds,
+//       status,
+//       merchant,
+//       fromDate,
+//       toDate,
+//       mid,
+//       paymentgateway,
+//       currency,
+//       country,
+//       cardtype,
+//       cardnumber,
+//     } = req.body;
+
+//     const filters = {};
+
+//     if (fromDate && toDate) {
+//       filters.transactiondate = {
+//         $gte: fromDate,
+//         $lte: toDate,
+//       };
+//     }
+
+//     if (status) {
+//       filters.Status = { $regex: new RegExp(`^${status}$`, 'i') };
+//     }
+
+//     if (merchant) {
+//       filters.merchant = { $regex: new RegExp(`^${merchant}$`, 'i') };
+//     }
+
+//     if (mid) {
+//       filters.mid = { $regex: new RegExp(`^${mid}$`, 'i') };
+//     }
+
+//     if (paymentgateway) {
+//       filters.paymentgateway = { $regex: new RegExp(`^${paymentgateway}$`, 'i') };
+//     }
+
+//     if (currency) {
+//       filters.currency = { $regex: new RegExp(`^${currency}$`, 'i') };
+//     }
+
+//     if (country) {
+//       filters.country = { $regex: new RegExp(`^${country}$`, 'i') };
+//     }
+
+//     if (cardtype) {
+//       filters.cardtype = { $regex: new RegExp(`^${cardtype}$`, 'i') };
+//     }
+
+//     if (cardnumber) {
+//       filters.cardnumber = cardnumber;
+//     }
+
+//     if (searchIds) {
+//       filters.$or = [
+//         { txnid: { $in: searchIds.split(" ") } },
+//         { merchantTxnId: { $in: searchIds.split(" ") } },
+//       ];
+//     }
+
+//     const totalCount = await LiveTransactionTable.countDocuments(filters);
+
+//     let pageSize = 50;
+
+//     const page = req.query.page ? parseInt(req.query.page) : 1;
+
+//     if (page < 1) {
+//       return res.status(400).json({ error: "Page number must be a positive integer" });
+//     }
+
+//     const skipCount = (page - 1) * pageSize;
+
+//     const transactions = await LiveTransactionTable.find(filters)
+//       .skip(skipCount)
+//       .limit(pageSize);
+
+//     const totalPages = Math.ceil(totalCount / pageSize);
+
+//     res.status(200).json({ transactions, totalCount, currentPage: page, totalPages });
+//   } catch (error) {
+//     console.error("Error fetching transactions:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// }
 
 async function quickSearch(req, res) {
   const { id } = req.query;
@@ -139,3 +230,4 @@ module.exports = {
   searchTransactionReport,
   quickSearch,
 };
+

@@ -14,13 +14,6 @@ const {
   manualSettlements,
 } = require("../controllers/settlementscontroller");
 
-const { 
-  listSettlement,
-  getCompanyList,
-  getCurrenciesOfCompany,
-  volumeSum,
-} = require("../controllers/utilitycontroller");
-
 const router = express.Router();
 const upload = multer();
 
@@ -29,14 +22,11 @@ router.post("/previewsettlement", verifyToken, previewSettlement);
 router.get("/settlements", verifyToken, getSettlement);
 router.put("/updatesettlements", verifyToken, updateSettlement);
 router.get("/getsettlementrecordforpdf", verifyToken, getSettlementRecordforPDF);
-router.get("/listsettlement", verifyToken, listSettlement);
-router.get("/companylist", verifyToken, getCompanyList);
-router.get("/currenciesforcompany", verifyToken, getCurrenciesOfCompany);
 router.post("/sendemail", upload.single("attachment"), verifyToken, sendEmail);
 router.get("/settlements/counts", verifyToken, getCounts);
 router.delete("/deletesettlementrecord", verifyToken, deleteSettlement);
 router.post("/manualsettlements", verifyToken, manualSettlements);
 router.post("/semimanualsettlements", verifyToken, semimanualSettlements);
-router.get("/volumesum", verifyToken, volumeSum);
+
 
 module.exports = router;

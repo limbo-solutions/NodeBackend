@@ -209,7 +209,7 @@ const AdminweeklyCardComparison = async (req, res) => {
     const currentDate = new Date();
     const currentWeekStartDate = new Date(currentDate.getTime() - 6 * 24 * 60 * 60 * 1000);
 
-    const previousweekstartDate = new Date(currentDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const previousweekstartDate = new Date(currentDate.getTime() - 13 * 24 * 60 * 60 * 1000);
     const previousweekendDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const formattedCurrentWeekStartDate = `${currentWeekStartDate.getFullYear()}-${(

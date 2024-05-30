@@ -2,6 +2,7 @@ require("../config/database");
 const LiveTransactionTable = require("../models/LiveTransactionTable");
 const Settlementtable = require("../models/Settlementtable");
 const Client = require("../models/Client");
+const Acquirer = require("../models/Acquirer");
 
 const ApprovalRatioChart = async (req, res) => {
   let { startDate, endDate, interval } = req.query;
@@ -222,6 +223,16 @@ async function getCurrenciesOfCompany(req, res) {
   }
 }
 
+async function acquirerList(req, res) {
+  try {
+    const acquirerNames = await Acquirer.distinct("acquirer_name");
+    res.status(200).json(acquirerNames);
+  } catch (error) {
+    console.error("Error fetching unique acquirer names:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = { 
   ApprovalRatioChart, 
   approvalRatio, 
@@ -230,4 +241,5 @@ module.exports = {
   volumeSum,
   listSettlement,
   getCompanyList,
-  getCurrenciesOfCompany, }
+  getCurrenciesOfCompany,
+  acquirerList }

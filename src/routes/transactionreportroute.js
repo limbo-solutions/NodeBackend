@@ -2,7 +2,7 @@ const express = require("express");
 const { verifyToken } = require("../middlewares/verifyToken");
 const {
   searchTransactionReport,
-  quickSearch
+  quickSearch,
 } = require("../controllers/reportscontroller");
 
 const router = express.Router();
