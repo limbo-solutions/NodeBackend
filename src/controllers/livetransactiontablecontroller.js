@@ -14,6 +14,7 @@ async function getLivedata(req, res) {
     if (!contentType || !contentType.includes("application/json")) {
       throw new Error("Expected JSON response");
     }
+
     const apiData = await response.json();
     const data = apiData.data;
 
@@ -22,68 +23,87 @@ async function getLivedata(req, res) {
     });
     const maxId = lastProcessedRecord ? lastProcessedRecord.livedata_id : 1;
 
-    newRecords = data.filter((item) => item.id > maxId);
-   
-    const dataToStore = newRecords.map((item) => ({
-      livedata_id: item.id,
-      txnid: item.transactionId,
-      merchantTxnId: item.mtxnID,
-      merchant:
-        item["merchant_name"].trim().charAt(0).toUpperCase() +
-        item["merchant_name"].slice(1).toLowerCase(),
-      amount: item.amount,
-      fee: item.fee,
-      merchant_fee: item.merchant_fee,
-      backUrl: item.backUrl,
-      merchant_id: item.merchant_id,
-      transactiondate: item.transaction_date,
-      statusBKP: item.statusBKP,
-      Status: item.status,
-      isSettled: item.isSettled,
-      settledDate: item.settledDate,
-      settledTxnId: item.settledTxnId,
-      settledAmount: item.settledAmount,
-      router: item.router,
-      description: item.description,
-      email: item.email,
-      currency: item.currency,
-      env: item.env,
-      mode: item.mode,
-      paymentgateway: item.payment_mode,
-      payment_id: item.payment_id,
-      pg_order_key: item.order_key,
-      message: item.message,
-      webhook_id: item.webhook_id,
-      requested_phone: item.requested_phone,
-      orderNo: item.requested_orderNumber,
-      cname: item.requested_name,
-      tempUpdated: item.tempUpdated,
-      is_admin_settled: item.is_admin_settled,
-      admin_settled_date: item.admin_settled_date,
-      admin_settled_amount: item.admin_settled_amount,
-      cardtype: item.cardType,
-      requestMode: item.requestMode,
-      cardnumber: item.cardNo,
-      cardExpire: item.cardExpire,
-      cardCVC: item.cardCVC,
-      pdate: item.pdate,
-      country: item.country,
-      dels: item.dels,
-      web_url: item.web_url,
-      mid: item.mid,
-      from_temp: item.from_temp,
-      accountHolder: item.accountHolder,
-      accountBankCode: item.accountBankCode,
-      accountNumber: item.accountNumber,
-      birthDate: item.birthDate,
-      internal_callback: item.internal_callback,
-      internal_callback_time: item.internal_callback_time,
-    }));
+    const newRecords = [];
+    const updatedRecords = [];
 
-    await LiveTransactionTable.insertMany(dataToStore);
+    for (const item of data) {
+      if (item.id > maxId) {
+        newRecords.push({
+          livedata_id: item.id,
+            txnid: item.transactionId,
+            merchantTxnId: item.mtxnID,
+            merchant: item["merchant_name"].trim().charAt(0).toUpperCase() + item["merchant_name"].slice(1).toLowerCase(),
+            amount: item.amount,
+            fee: item.fee,
+            merchant_fee: item.merchant_fee,
+            backUrl: item.backUrl,
+            merchant_id: item.merchant_id,
+            transactiondate: item.transaction_date,
+            statusBKP: item.statusBKP,
+            Status: item.status,
+            isSettled: item.isSettled,
+            settledDate: item.settledDate,
+            settledTxnId: item.settledTxnId,
+            settledAmount: item.settledAmount,
+            router: item.router,
+            description: item.description,
+            email: item.email,
+            currency: item.currency,
+            env: item.env,
+            mode: item.mode,
+            paymentgateway: item.payment_mode,
+            payment_id: item.payment_id,
+            pg_order_key: item.order_key,
+            message: item.message,
+            webhook_id: item.webhook_id,
+            requested_phone: item.requested_phone,
+            orderNo: item.requested_orderNumber,
+            cname: item.requested_name,
+            tempUpdated: item.tempUpdated,
+            is_admin_settled: item.is_admin_settled,
+            admin_settled_date: item.admin_settled_date,
+            admin_settled_amount: item.admin_settled_amount,
+            cardtype: item.cardType,
+            requestMode: item.requestMode,
+            cardnumber: item.cardNo,
+            cardExpire: item.cardExpire,
+            cardCVC: item.cardCVC,
+            pdate: item.pdate,
+            country: item.country,
+            dels: item.dels,
+            web_url: item.web_url,
+            mid: item.mid,
+            from_temp: item.from_temp,
+            accountHolder: item.accountHolder,
+            accountBankCode: item.accountBankCode,
+            accountNumber: item.accountNumber,
+            birthDate: item.birthDate,
+            internal_callback: item.internal_callback,
+            internal_callback_time: item.internal_callback_time,
+        });
+      } else {
+        const existingRecord = await LiveTransactionTable.findOne({ livedata_id: item.id });
+        if (existingRecord && existingRecord.Status !== item.status) {
+          updatedRecords.push({
+            updateOne: {
+              filter: { livedata_id: item.id },
+              update: { Status: item.status },
+            },
+          });
+        }
+      }
+    }
+
+    if (newRecords.length > 0) {
+      await LiveTransactionTable.insertMany(newRecords);
+    }
+
+    if (updatedRecords.length > 0) {
+      await LiveTransactionTable.bulkWrite(updatedRecords);
+    }
 
     if (req && res) {
-      res.json(dataToStore);
+      res.json({ newRecords, updatedRecords });
     }
   } catch (error) {
     console.error("Error fetching or processing data:", error);
