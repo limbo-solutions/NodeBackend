@@ -109,11 +109,7 @@ async function updateClient(req, res) {
     if (!clients) {
       return res.status(404).json({ error: "Client not found" });
     }
-
-    if (updateFields.status && updateFields.status !== "Inactive" && clients.status === "Inactive") {
-      return res.status(400).json({ error: "Status can only be updated from Active to Inactive" });
-    }
-
+    
     Object.keys(updateFields).forEach(field => {
       clients[field] = updateFields[field];
     });
