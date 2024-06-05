@@ -1,4 +1,6 @@
 const TransactionFlow = require("../models/TransactionFlow");
+const TempTransactionTable = require("../models/TempTransactionTable");
+const OrderTransactionTable = require("../models/OrderTransactionTable");
 
 const blackListed = [
   "Afghanistan",
@@ -83,13 +85,17 @@ async function initiateTransaction(req, res) {
     const {
       merchantID,
       transactionID,
+      orderNo,
       name,
       email,
+      phone,
       amount,
       currency,
       cardnumber,
       cardExpire,
       cardCVV,
+      backURL,
+      requestMode,
     } = req.body;
     console.log("Request received");
 
@@ -100,20 +106,23 @@ async function initiateTransaction(req, res) {
     console.log("Token", token);
 
     const txnId = generateUniqueTransactionId();
-    const transactiondate = new Date();
     const [cardtype, country] = await binAPI(maskedcardno.slice(0, 6));
 
-    const newTransaction = new TransactionFlow({
+    const newTransaction = new TempTransactionTable({
       merchantID,
       merchantTxnID: transactionID,
+      orderNo,
       name,
       email,
+      phone,
       amount,
       currency,
       cardnumber: maskedcardno,
       cardExpire,
       cardCVV: "*".repeat(cardCVV.length),
-      transactiondate,
+      backURL,
+      requestMode,
+      transactiondate: new Date(),
       country,
       cardtype,
       txnId,
@@ -127,61 +136,138 @@ async function initiateTransaction(req, res) {
     res.status(202).json({
       code: "202",
       status: "Accepted",
-      message: "Token generated.",
+      message: "Token generated from my server.",
       token,
     });
 
     console.log("Response sent");
 
-    const iscountryBlacklisted = blackListed.some(
-      (c) => c.toLowerCase() === country.toLowerCase()
+    // Perform the remaining operations asynchronously
+    processTransaction(
+      txnId,
+      orderNo,
+      name,
+      email,
+      phone,
+      amount,
+      currency,
+      cardnumber,
+      cardExpire,
+      cardCVV,
+      backURL,
+      requestMode
     );
-    let update = {};
-    if (iscountryBlacklisted) {
-      update = {
-        status: "Failed",
-        message: "Geolocation Blacklisted",
-      };
-    } else {
-      const dataforBank = {
-        name,
-        email,
-        amount,
-        currency,
-        cardnumber: maskedcardno,
-        cardExpire,
-        cardCVV,
-        country,
-        cardtype,
-        txnId,
-      };
-
-      const responsefromBank = await Bank(dataforBank);
-      console.log(responsefromBank);
-      update = {
-        status: responsefromBank.status,
-        message: responsefromBank.message,
-        txnId: responsefromBank.pgTransactionId,
-      };
-    }
-
-    await TransactionFlow.updateOne(
-      {txnId},
-      { $set: update }
-    );
-    console.log("Record updated");
   } catch (error) {
-    res.status(500).json({ error: "Something wrong happened" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Something wrong happened" });
+    }
+  }
+}
+
+async function processTransaction(
+  txnId,
+  orderNo,
+  name,
+  email,
+  phone,
+  amount,
+  currency,
+  cardnumber,
+  cardExpire,
+  cardCVV,
+  backURL,
+  requestMode
+) {
+  try {
+    // const iscountryBlacklisted = blackListed.some(
+    //   (c) => c.toLowerCase() === country.toLowerCase()
+    // );
+    // let update = {};
+    // if (iscountryBlacklisted) {
+    //   update = {
+    //     status: "Failed",
+    //     message: "Geolocation Blacklisted",
+    //     txnId: txnId
+    //   };
+    // } else {
+    const dataforBank = {
+      name,
+      email,
+      phone,
+      amount,
+      currency,
+      transaction_id: txnId,
+      order_number: orderNo,
+      back_url: backURL,
+      requestMode,
+      cardNo: cardnumber,
+      cardExpire,
+      cardCVC: cardCVV,
+    };
+
+    console.log("data", dataforBank);
+    const responsefromBank = await Bank(dataforBank);
+    console.log("response", responsefromBank);
+    update = {
+      status: responsefromBank.status,
+      message: responsefromBank.message,
+      token: responsefromBank.token,
+    };
+    // }
+
+    await TempTransactionTable.updateOne({ txnId }, { $set: update });
+    console.log("Temp Record updated");
+    // const updatedTxnId = update.txnId;
+    // console.log("Txnid", updatedTxnId);
+
+    // const temp_transaction = await TempTransactionTable.findOne({
+    //   txnId
+    // });
+
+    // console.log("temp_transaction", temp_transaction);
+
+    // const order_transaction = new OrderTransactionTable({
+    //   merchantID: temp_transaction.merchantID,
+    //   merchantTxnID: temp_transaction.merchantTxnID,
+    //   name: temp_transaction.name,
+    //   email: temp_transaction.email,
+    //   amount: temp_transaction.amount,
+    //   currency: temp_transaction.currency,
+    //   cardnumber: temp_transaction.cardnumber,
+    //   cardExpire: temp_transaction.cardExpire,
+    //   cardCVV: temp_transaction.cardCVV,
+    //   transactiondate: temp_transaction.transactiondate,
+    //   country: temp_transaction.country,
+    //   cardtype: temp_transaction.cardtype,
+    //   txnId: temp_transaction.txnId,
+    //   token: temp_transaction.token,
+    //   status: temp_transaction.status,
+    //   message: temp_transaction.message,
+    // });
+
+    // await order_transaction.save();
+
+    // console.log("Order Record saved");
+
+    // await TempTransactionTable.deleteOne({ txnId });
+  } catch (error) {
+    console.error("Error processing transaction:", error);
   }
 }
 
 async function Bank(dataforBank) {
   console.log("In bank");
   try {
-    const response = await fetch("http://54.159.39.148/", {
+    // const response = await fetch("http://54.159.39.148/", {
+
+    const response = await fetch("https://centpays.com/v2/process_payment", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "api-key":
+          "live_$2y$10$J09e24hL3lXlFmB5fnel0eKtPUmVUIn7WDRbIxbMGnplZ0n0J31UW",
+        "api-secret":
+          "live_$2y$10$VCkKRD.SBONWUGWefTbfle7pTOhd1z7M4tOgoGo7Vyzhn3Gh/TSmu",
       },
       body: JSON.stringify(dataforBank),
     });
@@ -225,7 +311,7 @@ function generateToken() {
 function generateUniqueTransactionId() {
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substr(2, 8);
-  const transactionId = `CP_${timestamp}-${randomString}`;
+  const transactionId = `temp_${timestamp}-${randomString}`;
 
   return transactionId;
 }
@@ -282,4 +368,15 @@ async function getTransaction(req, res) {
   }
 }
 
-module.exports = { initiateTransaction, getInfoOfTxn, getTransaction };
+async function getCallback(req, res){
+  try {
+    const {
+     code, status,message,token
+    } = req.body;
+    console.table({code,status,message,token})
+  }catch(error){
+   console.log(error)
+  }
+}
+
+module.exports = { initiateTransaction, getInfoOfTxn, getTransaction, getCallback };
