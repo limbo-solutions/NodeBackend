@@ -215,8 +215,12 @@ async function processTransaction(
     };
     // }
 
+    
     await TempTransactionTable.updateOne({ txnId }, { $set: update });
     console.log("Temp Record updated");
+
+    getCallbackfromCentpays(update.token)
+    
     // const updatedTxnId = update.txnId;
     // console.log("Txnid", updatedTxnId);
 
@@ -254,6 +258,24 @@ async function processTransaction(
     console.error("Error processing transaction:", error);
   }
 }
+
+async function getCallbackfromCentpays(token){
+  try {
+  const response = await fetch(`https://centpays.com/v2/ini_payment/${token}`);
+  if (!response.ok) {
+    throw new Error(`Network response was not ok: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log(data);
+  return
+} catch (error) {
+  console.error(
+    "There was a problem with the fetch operation from ini_payment:",
+    error
+  );
+  throw error;
+}}
 
 async function Bank(dataforBank) {
   console.log("In bank");
@@ -370,10 +392,10 @@ async function getTransaction(req, res) {
 
 async function getCallback(req, res){
   try {
-    const {
-     code, status,message,token
-    } = req.body;
-    console.table({code,status,message,token})
+    const {code, status, message, Transaction_id}
+     = req.body;
+    console.table({code, status, message, Transaction_id})
+    res.status(201).json({message:"Worked"})
   }catch(error){
    console.log(error)
   }
