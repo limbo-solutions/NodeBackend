@@ -23,8 +23,8 @@ async function searchTransactionReport(req, res) {
       pipeline.push({
         $match: {
           transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
+            $gte: fromDate.replace("T"," "),
+            $lte: toDate.replace("T"," "),
           },
         },
       });

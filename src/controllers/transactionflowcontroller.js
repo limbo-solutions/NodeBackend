@@ -133,12 +133,12 @@ async function initiateTransaction(req, res) {
 
     console.log("Record saved");
 
-    res.status(202).json({
-      code: "202",
-      status: "Accepted",
-      message: "Token generated from my server.",
-      token,
-    });
+    // res.status(202).json({
+    //   code: "202",
+    //   status: "Accepted",
+    //   message: "Token generated from my server.",
+    //   token,
+    // });
 
     console.log("Response sent");
 
@@ -215,11 +215,10 @@ async function processTransaction(
     };
     // }
 
-    
     await TempTransactionTable.updateOne({ txnId }, { $set: update });
     console.log("Temp Record updated");
 
-    getCallbackfromCentpays(update.token)
+    // getCallbackfromCentpays(update.token)
     
     // const updatedTxnId = update.txnId;
     // console.log("Txnid", updatedTxnId);
