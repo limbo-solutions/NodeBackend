@@ -143,7 +143,7 @@ async function initiateTransaction(req, res) {
     console.log("Response sent");
 
     // Perform the remaining operations asynchronously
-    processTransaction(
+    const response = await processTransaction(
       txnId,
       orderNo,
       name,
@@ -157,6 +157,8 @@ async function initiateTransaction(req, res) {
       backURL,
       requestMode
     );
+    console.log("response2", response)
+    res.status(200).json(response)
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).json({ error: "Something wrong happened" });
@@ -253,6 +255,7 @@ async function processTransaction(
     // console.log("Order Record saved");
 
     // await TempTransactionTable.deleteOne({ txnId });
+    return responsefromBank;
   } catch (error) {
     console.error("Error processing transaction:", error);
   }
@@ -391,10 +394,10 @@ async function getTransaction(req, res) {
 
 async function getCallback(req, res){
   try {
-    const {code, status, message, Transaction_id}
-     = req.body;
-    console.table({code, status, message, Transaction_id})
-    res.status(201).json({message:"Worked"})
+    // const {code, status, message, Transaction_id}
+    //  = req.body;
+    // console.table({code, status, message, Transaction_id})
+    // res.status(201).json({message:"Worked"})
   }catch(error){
    console.log(error)
   }
