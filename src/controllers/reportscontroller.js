@@ -105,8 +105,8 @@ async function searchTransactionReport(req, res) {
       });
     }
 
-    const transactions = await LiveTransactionTable.aggregate(pipeline);
-    res.json(transactions.sort({ transactiondate: -1 }) );
+    const transactions = await LiveTransactionTable.aggregate(pipeline).sort({ transactiondate: -1 });
+    res.json(transactions );
   } catch (error) {
     console.error("Error searching transactions:", error);
     res.status(500).json({ error: "Internal Server Error" });
