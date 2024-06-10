@@ -78,9 +78,9 @@ const countriesList = async (req, res) => {
 
     const distinctCapitalizedCountries = Array.from(capitalizedCountries);
 
-    res.status(200).json({
-      data: distinctCapitalizedCountries
-    });
+    res.status(200).json(
+      distinctCapitalizedCountries
+    );
   } catch (error) {
     console.error("Error processing distinct capitalized countries:", error);
     res.status(500).json({
@@ -95,33 +95,40 @@ const capitalizeCountryName = (country) => {
 };
 
 const midList = async (req, res) => {
-  try {
-    const distinctMids = await LiveTransactionTable.aggregate([
-      {
-        $match: {
-          mid: { $nin: [null, ''] }
-        }
-      },
-      {
-        $group: {
-          _id: "$mid"
-        }
-      },
-      {
-        $sort: {
-          _id: 1
-        }
-      },
-    ]);
+  // try {
+  //   const distinctMids = await LiveTransactionTable.aggregate([
+  //     {
+  //       $match: {
+  //         mid: { $nin: [null, ''] }
+  //       }
+  //     },
+  //     {
+  //       $group: {
+  //         _id: "$mid"
+  //       }
+  //     },
+  //     {
+  //       $sort: {
+  //         _id: 1
+  //       }
+  //     },
+  //   ]);
 
-    res.status(200).json({
-      data: distinctMids
-    });
+  //   res.status(200).json({
+  //     data: distinctMids
+  //   });
+  // } catch (error) {
+  //   console.error("Error fetching distinct mids:", error);
+  //   res.status(500).json({
+  //     message: "Internal Server Error"
+  //   });
+  // }
+  try {
+    const mids = await LiveTransactionTable.distinct("mid");
+    res.json(mids);
   } catch (error) {
-    console.error("Error fetching distinct mids:", error);
-    res.status(500).json({
-      message: "Internal Server Error"
-    });
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
