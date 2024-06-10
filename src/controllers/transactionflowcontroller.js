@@ -394,10 +394,10 @@ async function getTransaction(req, res) {
 
 async function getCallback(req, res){
   try {
-    // const {code, status, message, Transaction_id}
-    //  = req.body;
-    // console.table({code, status, message, Transaction_id})
-    // res.status(201).json({message:"Worked"})
+    const {code, status, message, Transaction_id}
+     = req.body;
+    console.table({code, status, message, Transaction_id})
+    res.status(201).send("Callback received")
   }catch(error){
    console.log(error)
   }

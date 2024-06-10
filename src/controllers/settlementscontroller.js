@@ -903,6 +903,139 @@ async function semimanualSettlements (req, res){
   }
 }
 
+async function createDailySettlementExcel(req, res) {
+  try {
+    const { fromDate, toDate, company_name } = req.body;
+
+//     const startDate = new Date(fromDate);
+//     const endDate = new Date(toDate);
+console.table({fromDate, toDate})
+// console.table({startDate, endDate})
+    let settlement_records = [];
+
+    for (let date = new Date(fromDate); date <= new Date(toDate); date.setDate(date.getDate() + 1)) {
+      const year = date.getFullYear();
+      const month = ("0" + (date.getMonth() + 1)).slice(-2);
+      const day = ("0" + date.getDate()).slice(-2);
+
+      const newfromDate = `${year}-${month}-${day} 00:00:00`;
+      const newtoDate = `${year}-${month}-${day} 23:59:59`;
+
+      const rates = await Ratetable.findOne({ company_name });
+
+      const all_txn_of_company = await LiveTransactionTable.aggregate([
+        {
+          $match: {
+            merchant: company_name,
+            transactiondate: {
+              $gte: newfromDate,
+              $lte: newtoDate,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { currency: "$currency", status: "$Status" },
+            totalTransactions: { $sum: 1 },
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.currency",
+            statuses: {
+              $push: {
+                status: "$_id.status",
+                totalTransactions: "$totalTransactions",
+                totalAmount: "$totalAmount",
+              }
+            }
+          }
+        }
+      ]);
+
+      let app_count = 0;
+      let app_vol = 0;
+      let dec_count = 0;
+      let dec_vol = 0;
+      let usd_app_count = 0;
+      let usd_dec_count = 0;
+      let eur_app_count = 0;
+      let eur_dec_count = 0;
+
+      all_txn_of_company.forEach((currencyGroup) => {
+        const status = currencyGroup.statuses;
+        const currency = currencyGroup._id;
+
+        status.forEach((statusGroup) => {
+          const { totalTransactions, totalAmount } = statusGroup;
+
+          if (currency === "USD") {
+            if (statusGroup.status === "Success") {
+              usd_app_count += totalTransactions;
+              app_vol += totalAmount;
+            } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+              usd_dec_count += totalTransactions;
+              dec_vol += totalAmount;
+            }
+          } else if (currency === "EUR") {
+            if (statusGroup.status === "Success") {
+              eur_app_count += totalTransactions;
+              app_vol += totalAmount;
+            } else if (statusGroup.status === "Failed" || statusGroup.status === "Incompleted") {
+              eur_dec_count += totalTransactions;
+              dec_vol += totalAmount;
+            }
+          }
+        });
+      });
+
+      app_count = eur_app_count + usd_app_count;
+      dec_count = eur_dec_count + usd_dec_count;
+
+      const MDR_amount = parseFloat((app_vol * (rates.MDR / 100)).toFixed(3));
+      const app_amount = parseFloat((app_count * rates.txn_app).toFixed(3));
+      const dec_amount = parseFloat((dec_count * rates.txn_dec).toFixed(3));
+      const RR_amount = parseFloat((app_vol * (rates.RR / 100)).toFixed(3));
+
+      const settlement_amount = parseFloat(
+        (app_vol - MDR_amount - app_amount - dec_amount - RR_amount).toFixed(3)
+      );
+
+      const settlement_fee_amount = parseFloat(
+        (settlement_amount * (rates.settlement_fee / 100)).toFixed(3)
+      );
+
+      const final_settlement_amount = parseFloat(
+        (settlement_amount - settlement_fee_amount).toFixed(3)
+      );
+
+      const settlementDate = `${year}-${month}-${day}`;
+
+      const settlement_record = {
+        "Date": newfromDate.split(" ")[0],
+        "Volumes": app_vol,
+        "MDR":MDR_amount,
+        "Approve Txn":app_amount,
+        "Decline Txn":dec_amount,
+        "Rolling Reserve":RR_amount,
+        "Settlement Amount":settlement_amount,
+        "Settlement Fee":settlement_fee_amount,
+        "Total Settlement Amount":final_settlement_amount
+      };
+
+      settlement_records.push(settlement_record);
+    }
+
+    res.status(201).json(
+      settlement_records,
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -913,5 +1046,6 @@ module.exports = {
   getCounts,
   deleteSettlement,
   semimanualSettlements,
-  manualSettlements
+  manualSettlements,
+  createDailySettlementExcel
 };

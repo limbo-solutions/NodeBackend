@@ -12,6 +12,7 @@ const {
   getCounts,
   deleteSettlement,semimanualSettlements,
   manualSettlements,
+  createDailySettlementExcel
 } = require("../controllers/settlementscontroller");
 
 const router = express.Router();
@@ -27,5 +28,6 @@ router.get("/settlements/counts", verifyToken, getCounts);
 router.delete("/deletesettlementrecord", verifyToken, deleteSettlement);
 router.post("/manualsettlements", verifyToken, manualSettlements);
 router.post("/semimanualsettlements", verifyToken, semimanualSettlements);
+router.post("/dailySettlement", verifyToken, createDailySettlementExcel);
 
 module.exports = router;
