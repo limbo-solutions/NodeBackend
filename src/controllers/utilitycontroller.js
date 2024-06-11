@@ -240,6 +240,51 @@ async function acquirerList(req, res) {
   }
 }
 
+async function averageTxns(req, res) {
+  try {
+    const { fromDate, toDate } = req.body;
+
+    const transactions = await LiveTransactionTable.aggregate([
+      {
+        $match: {
+          transactiondate: { $gte: fromDate, $lte: toDate }
+        }
+      },
+      {
+        $addFields: {
+          transactionDateISO: { $dateFromString: { dateString: "$transactiondate" } }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $toDate: {
+              $subtract: [
+                { $toLong: "$transactionDateISO" },
+                { $mod: [{ $toLong: "$transactionDateISO" }, 1000 * 60 * 5] }
+              ]
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          averageTransactions: { $avg: "$count" }
+        }
+      }
+    ]);
+
+    const average = transactions.length > 0 ? transactions[0].averageTransactions : 0;
+    res.json(average);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = { 
   ApprovalRatioChart, 
   approvalRatio, 
@@ -249,4 +294,4 @@ module.exports = {
   listSettlement,
   getCompanyList,
   getCurrenciesOfCompany,
-  acquirerList }
+  acquirerList,averageTxns }
