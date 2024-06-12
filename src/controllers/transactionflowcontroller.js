@@ -133,13 +133,6 @@ async function initiateTransaction(req, res) {
 
     console.log("Record saved");
 
-    // res.status(202).json({
-    //   code: "202",
-    //   status: "Accepted",
-    //   message: "Token generated from my server.",
-    //   token,
-    // });
-
     console.log("Response sent");
 
     // Perform the remaining operations asynchronously
@@ -157,8 +150,11 @@ async function initiateTransaction(req, res) {
       backURL,
       requestMode
     );
-    console.log("response2", response)
+  
     res.status(200).json(response)
+
+    //Redirect to callback url
+    getCallbackfromCentpays(response.token)
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).json({ error: "Something wrong happened" });
