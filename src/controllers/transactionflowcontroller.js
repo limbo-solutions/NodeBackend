@@ -150,11 +150,10 @@ async function initiateTransaction(req, res) {
       backURL,
       requestMode
     );
-  
-    res.status(200).json(response)
 
     //Redirect to callback url
-    getCallbackfromCentpays(response.token)
+    const redirectUrl = `https://centpays.com/v2/ini_payment/${response.token}`;
+    res.redirect(redirectUrl);
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).json({ error: "Something wrong happened" });
@@ -257,23 +256,47 @@ async function processTransaction(
   }
 }
 
-async function getCallbackfromCentpays(token){
-  try {
-  const response = await fetch(`https://centpays.com/v2/ini_payment/${token}`);
-  if (!response.ok) {
-    throw new Error(`Network response was not ok: ${response.statusText}`);
-  }
+async function getCallbackfromCentpays(token, retries = 3, timeout = 5000) {
+  const controller = new AbortController();
+  const signal = controller.signal;
 
-  const data = await response.json();
-  console.log(data);
-  return
-} catch (error) {
-  console.error(
-    "There was a problem with the fetch operation from ini_payment:",
-    error
-  );
-  throw error;
-}}
+  const fetchWithTimeout = (url, options, timeout) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error("Request Timeout"));
+      }, timeout);
+
+      fetch(url, { ...options, signal })
+        .then(response => {
+          clearTimeout(timer);
+          if (!response.ok) {
+            reject(new Error(`Network response was not ok: ${response.statusText}`));
+          } else {
+            resolve(response.json());
+          }
+        })
+        .catch(err => {
+          clearTimeout(timer);
+          reject(err);
+        });
+    });
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const data = await fetchWithTimeout(`https://centpays.com/v2/ini_payment/${token}`, {}, timeout);
+      return data;
+    } catch (error) {
+      if (attempt < retries) {
+        console.log(`Attempt ${attempt} failed, retrying...`);
+      } else {
+        console.error("There was a problem with the fetch operation from ini_payment:", error);
+        throw error;
+      }
+    }
+  }
+}
+
 
 async function Bank(dataforBank) {
   console.log("In bank");
