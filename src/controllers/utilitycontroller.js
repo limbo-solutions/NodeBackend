@@ -56,6 +56,44 @@ const approvalRatio = async (req, res) => {
   }
 };
 
+const volumeSum = async (req, res) => {
+  const { company_name } = req.query;
+  if (!company_name) {
+      return res.status(400).json({ error: 'company_name is a required parameter' });
+  }
+  try {
+      const pipeline = [
+          {
+              $match: {
+                  company_name: company_name
+              }
+          },
+          {
+              $group: {
+                  _id: null,
+                  totalVolume: { $sum: "$total_vol" },
+                  settledVolume: { $sum: "$settlement_vol" }
+              }
+          },
+          {
+              $project: {
+                  _id: 0,
+                  totalVolume: 1,
+                  settledVolume: 1,
+              }
+          }
+      ];
+
+      const result = await Settlementtable.aggregate(pipeline);
+      const totalVolume = result.length > 0 ? result[0].totalVolume : 0;
+      const settledVolume = result.length > 0 ? result[0].settledVolume : 0;
+      res.json({ totalVolume, settledVolume });
+  } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: 'An error occurred while fetching transactions' });
+  }
+};
+
 const countriesList = async (req, res) => {
   try {
     const countries = await LiveTransactionTable.aggregate([
@@ -95,78 +133,12 @@ const capitalizeCountryName = (country) => {
 };
 
 const midList = async (req, res) => {
-  // try {
-  //   const distinctMids = await LiveTransactionTable.aggregate([
-  //     {
-  //       $match: {
-  //         mid: { $nin: [null, ''] }
-  //       }
-  //     },
-  //     {
-  //       $group: {
-  //         _id: "$mid"
-  //       }
-  //     },
-  //     {
-  //       $sort: {
-  //         _id: 1
-  //       }
-  //     },
-  //   ]);
-
-  //   res.status(200).json({
-  //     data: distinctMids
-  //   });
-  // } catch (error) {
-  //   console.error("Error fetching distinct mids:", error);
-  //   res.status(500).json({
-  //     message: "Internal Server Error"
-  //   });
-  // }
   try {
     const mids = await LiveTransactionTable.distinct("mid");
     res.json(mids);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-const volumeSum = async (req, res) => {
-  const { company_name } = req.query;
-  if (!company_name) {
-      return res.status(400).json({ error: 'company_name is a required parameter' });
-  }
-  try {
-      const pipeline = [
-          {
-              $match: {
-                  company_name: company_name
-              }
-          },
-          {
-              $group: {
-                  _id: null,
-                  totalVolume: { $sum: "$total_vol" },
-                  settledVolume: { $sum: "$settlement_vol" }
-              }
-          },
-          {
-              $project: {
-                  _id: 0,
-                  totalVolume: 1,
-                  settledVolume: 1,
-              }
-          }
-      ];
-
-      const result = await Settlementtable.aggregate(pipeline);
-      const totalVolume = result.length > 0 ? result[0].totalVolume : 0;
-      const settledVolume = result.length > 0 ? result[0].settledVolume : 0;
-      res.json({ totalVolume, settledVolume });
-  } catch (error) {
-      console.error('Error fetching transactions:', error);
-      res.status(500).json({ error: 'An error occurred while fetching transactions' });
   }
 };
 
@@ -201,11 +173,24 @@ async function listSettlement(req, res) {
 
 async function getCompanyList(req, res) {
   try {
-    const company_names = await Client.distinct("company_name");
+    const { status = 'all' } = req.query;
+
+    if (status !== 'all' && status !== 'Active') {
+      throw new Error('Invalid status. Status can either be All or Active');
+    }
+
+    let query = {};
+    if (status === 'all') {
+      query = {};
+    } else if (status === 'Active') {
+      query.status = 'Active';
+    }
+
+    const company_names = await Client.distinct("company_name", query);
     res.json(company_names);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(400).json({ message: error.message });
   }
 }
 

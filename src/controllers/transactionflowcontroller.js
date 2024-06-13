@@ -153,7 +153,7 @@ async function initiateTransaction(req, res) {
 
     //Redirect to callback url
     const redirectUrl = `https://centpays.com/v2/ini_payment/${response.token}`;
-    res.redirect(redirectUrl);
+    res.status(200).json({ redirectUrl });
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).json({ error: "Something wrong happened" });
@@ -308,9 +308,9 @@ async function Bank(dataforBank) {
       headers: {
         "Content-Type": "application/json",
         "api-key":
-          "live_$2y$10$J09e24hL3lXlFmB5fnel0eKtPUmVUIn7WDRbIxbMGnplZ0n0J31UW",
+          "live_$2y$10$MO5xnO7AVcwTKmovvi6fEuTDdlaT/CRpCgdK0nTjuNqZ1xWiZrmL6",
         "api-secret":
-          "live_$2y$10$VCkKRD.SBONWUGWefTbfle7pTOhd1z7M4tOgoGo7Vyzhn3Gh/TSmu",
+          "live_$2y$10$fNghQ0yJycZCeDinrWRG/.1rHN74XCM3lLpd2fWfrCFkwG.cEz.3W",
       },
       body: JSON.stringify(dataforBank),
     });
