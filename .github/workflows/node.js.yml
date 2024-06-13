@@ -25,7 +25,7 @@ jobs:
     - run: npm ci
     - run: pm2 restart app.js
 
-deploy:
+  deploy:
     needs: build
     runs-on: ubuntu-latest
 
