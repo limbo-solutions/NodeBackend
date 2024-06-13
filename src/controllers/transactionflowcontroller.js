@@ -153,7 +153,7 @@ async function initiateTransaction(req, res) {
 
     //Redirect to callback url
     const redirectUrl = `https://centpays.com/v2/ini_payment/${response.token}`;
-    res.status(200).json( redirectUrl );
+    res.status(200).json( {redirectUrl });
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).json({ error: "Something wrong happened" });

@@ -9,7 +9,7 @@ const {
     getCurrenciesOfCompany,
     countriesList,
     midList,
-    acquirerList,averageTxns
+    acquirerList
 } = require("../controllers/utilitycontroller");
 
 const router = express.Router();
@@ -22,6 +22,6 @@ router.get("/approvalratio", verifyToken, approvalRatio);
 router.get("/listofcountries", verifyToken, countriesList);
 router.get("/listofmids", verifyToken, midList);
 router.get("/acquirerlist", verifyToken, acquirerList);
-router.post("/avgtxns", averageTxns);
+
 
 module.exports = router;
